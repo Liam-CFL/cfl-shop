@@ -1,0 +1,2 @@
+# Khong can thu vien ngoai - chi dung Python built-in
+# Python >= 3.8
