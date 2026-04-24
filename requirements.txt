@@ -1,6 +1,3 @@
 psycopg2-binary
 EOF
 echo "ok"
-Output
-
-ok
