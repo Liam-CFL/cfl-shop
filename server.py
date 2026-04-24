@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+Shop Xu Su Kien CFL - Server v3
+- PostgreSQL (Supabase) for persistent storage
+- Falls back to JSON file if no DB configured
+"""
 import json, os, hashlib, shutil, threading, time, random
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -7,57 +12,59 @@ from urllib.parse import urlparse
 DATA_FILE = "data.json"
 PORT = int(os.environ.get("PORT", 8080))
 BACKUP_DIR = "backup"
-MAX_BACKUPS = 30
-BACKUP_INTERVAL = 24 * 60 * 60
+MAX_BACKUPS = 60
+BACKUP_INTERVAL = 6 * 60 * 60  # backup every 6h
 
-DEFAULT_DATA = {
-    "settings": {
-        "shop_name": "Shop Xu Su Kien CFL",
-        "zalo": "0964149813",
-        "fb_page": "https://www.facebook.com/NguyenChiCuong.AC9",
-        "bank_name": "MB Bank",
-        "bank_number": "09090669999",
-        "bank_owner": "NGUYEN TRAN CHI CUONG",
-        "momo": "",
-        "announcement": "Chao mung den voi Shop Xu Su Kien CFL!",
-        "spin_cost": 5000,
-        "spin_prizes": [
-            {"label":"10,000d","value":10000,"type":"balance","weight":20},
-            {"label":"5 Xu","value":5,"type":"xu","weight":25},
-            {"label":"10 Xu","value":10,"type":"xu","weight":20},
-            {"label":"50,000d","value":50000,"type":"balance","weight":5},
-            {"label":"1 Xu","value":1,"type":"xu","weight":30},
-            {"label":"100,000d","value":100000,"type":"balance","weight":2},
-            {"label":"20 Xu","value":20,"type":"xu","weight":10},
-            {"label":"Thu lai","value":0,"type":"none","weight":15}
-        ]
-    },
-    "ranks": [
-        {"id":"bronze","name":"Dong","min_spent":0,"color":"#cd7f32","discount":0,"icon":"bronze"},
-        {"id":"silver","name":"Bac","min_spent":500000,"color":"#c0c0c0","discount":3,"icon":"silver"},
-        {"id":"gold","name":"Vang","min_spent":2000000,"color":"#f5a623","discount":5,"icon":"gold"},
-        {"id":"diamond","name":"Kim Cuong","min_spent":5000000,"color":"#00d4ff","discount":10,"icon":"diamond"}
-    ],
-    "accounts": [
-        {"id":"admin","username":"admin","name":"Nguyen Chi Cuong",
-         "pin_hash": hashlib.sha256("admin123".encode()).hexdigest(),
-         "role":"admin","balance":0,"total_spent":0,"rank":"diamond","spin_tickets":0,
-         "created": datetime.now().strftime("%d/%m/%Y")}
-    ],
-    "prices": [
-        {"id":"xu_sk","name":"Xu Su Kien","price":30000,"unit":"xu","note":"Lien he Zalo","active":True},
-        {"id":"xu_th","name":"Xu Thuong","price":4000,"unit":"xu","note":"Giao nhanh","active":True}
-    ],
-    "cf_packages": [
-        {"id":"cf1","name":"5,000 ZPoint","xu":5000,"price":50000,"bonus":"","active":True},
-        {"id":"cf2","name":"10,000 ZPoint","xu":10000,"price":95000,"bonus":"Bonus 5%","active":True},
-        {"id":"cf3","name":"25,000 ZPoint","xu":25000,"price":230000,"bonus":"Bonus 8%","active":True},
-        {"id":"cf4","name":"50,000 ZPoint","xu":50000,"price":450000,"bonus":"Bonus 10%","active":True}
-    ],
-    "topups": [],
-    "orders": [],
-    "spin_history": []
-}
+# ========== DEFAULT DATA ==========
+def make_default():
+    return {
+        "settings": {
+            "shop_name": "Shop Xu Su Kien CFL",
+            "zalo": "0964149813",
+            "fb_page": "https://www.facebook.com/NguyenChiCuong.AC9",
+            "bank_name": "MB Bank",
+            "bank_number": "09090669999",
+            "bank_owner": "NGUYEN TRAN CHI CUONG",
+            "momo": "0964149813",
+            "momo_owner": "NGUYEN TRAN CHI CUONG",
+            "announcement": "Chao mung den voi Shop Xu Su Kien CFL!",
+            "spin_cost": 5000,
+            "spin_prizes": [
+                {"id":"s1","label":"10,000d","value":10000,"type":"balance","weight":20,"color":"#f5a623"},
+                {"id":"s2","label":"5 Xu","value":5,"type":"xu","weight":25,"color":"#00d4ff"},
+                {"id":"s3","label":"10 Xu","value":10,"type":"xu","weight":20,"color":"#00ff88"},
+                {"id":"s4","label":"50,000d","value":50000,"type":"balance","weight":5,"color":"#a855f7"},
+                {"id":"s5","label":"1 Xu","value":1,"type":"xu","weight":30,"color":"#ff6b35"},
+                {"id":"s6","label":"100,000d","value":100000,"type":"balance","weight":2,"color":"#ffd166"},
+                {"id":"s7","label":"20 Xu","value":20,"type":"xu","weight":10,"color":"#ff3366"},
+                {"id":"s8","label":"Thu lai","value":0,"type":"none","weight":15,"color":"#3a3a60"}
+            ]
+        },
+        "ranks": [
+            {"id":"bronze","name":"Khách lẻ","min_spent":0,"color":"#cd7f32","discount":3},
+            {"id":"silver","name":"Cộng Tác Viên","min_spent":200000,"color":"#c0c0c0","discount":10},
+            {"id":"gold","name":"Đại Lí","min_spent":3000000,"color":"#f5a623","discount":20},
+            {"id":"diamond","name":"Tổng Đại lí","min_spent":10000000,"color":"#00d4ff","discount":30}
+        ],
+        "accounts": [
+            {"id":"admin","username":"admin","name":"Nguyen Chi Cuong",
+             "pin_hash":hashlib.sha256("admin123".encode()).hexdigest(),
+             "role":"admin","balance":0,"total_spent":0,"rank":"diamond","created":datetime.now().strftime("%d/%m/%Y")}
+        ],
+        "prices": [
+            {"id":"xu_sk","name":"Xu Su Kien","price":30000,"unit":"xu","note":"Lien he Zalo","active":True},
+            {"id":"xu_th","name":"Xu Thuong","price":4000,"unit":"xu","note":"Giao nhanh","active":True}
+        ],
+        "cf_packages": [
+            {"id":"cf1","name":"5,000 Xu CF","xu":5000,"price":50000,"bonus":"","active":True},
+            {"id":"cf2","name":"10,000 Xu CF","xu":10000,"price":95000,"bonus":"Bonus 5%","active":True},
+            {"id":"cf3","name":"25,000 Xu CF","xu":25000,"price":230000,"bonus":"Bonus 8%","active":True},
+            {"id":"cf4","name":"50,000 Xu CF","xu":50000,"price":450000,"bonus":"Bonus 10%","active":True}
+        ],
+        "topups": [],
+        "orders": [],
+        "spin_history": []
+    }
 
 AVATAR_COLORS = [
     {"color":"#f59e0b","bg":"#1a1400"},{"color":"#10b981","bg":"#001a0e"},
@@ -65,42 +72,119 @@ AVATAR_COLORS = [
     {"color":"#a855f7","bg":"#0e001a"},{"color":"#06b6d4","bg":"#001519"}
 ]
 
+# ========== POSTGRES SUPPORT ==========
+DB_URL = os.environ.get("DATABASE_URL", "")
+db_conn = None
+
+def get_db():
+    global db_conn
+    if not DB_URL:
+        return None
+    try:
+        import psycopg2
+        if db_conn is None or db_conn.closed:
+            db_conn = psycopg2.connect(DB_URL, sslmode='require')
+        return db_conn
+    except Exception as e:
+        print("  [DB] Cannot connect:", e)
+        return None
+
+def db_init():
+    conn = get_db()
+    if not conn:
+        return False
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS store (
+                key VARCHAR(50) PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+        conn.commit()
+        cur.close()
+        print("  [DB] PostgreSQL connected and ready!")
+        return True
+    except Exception as e:
+        print("  [DB] Init error:", e)
+        return False
+
 def load_data():
+    conn = get_db()
+    if conn:
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT value FROM store WHERE key='data'")
+            row = cur.fetchone()
+            cur.close()
+            if row:
+                d = json.loads(row[0])
+                _ensure_defaults(d)
+                return d
+        except Exception as e:
+            print("  [DB] Load error:", e)
+    # fallback to file
     if not os.path.exists(DATA_FILE):
-        d = json.loads(json.dumps(DEFAULT_DATA))
-        save_data(d); return d
-    with open(DATA_FILE,"r",encoding="utf-8") as f: d=json.load(f)
-    for k,v in DEFAULT_DATA.items():
-        if k not in d: d[k]=v
-    for k,v in DEFAULT_DATA["settings"].items():
-        if k not in d["settings"]: d["settings"][k]=v
+        d = make_default()
+        save_data(d)
+        return d
+    with open(DATA_FILE,"r",encoding="utf-8") as f:
+        d = json.load(f)
+    _ensure_defaults(d)
     return d
 
 def save_data(data):
+    conn = get_db()
+    jdata = json.dumps(data, ensure_ascii=False)
+    if conn:
+        try:
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO store (key, value, updated_at)
+                VALUES ('data', %s, NOW())
+                ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, updated_at=NOW()
+            """, (jdata,))
+            conn.commit()
+            cur.close()
+        except Exception as e:
+            print("  [DB] Save error:", e)
+            try: conn.rollback()
+            except: pass
+    # always save to file as backup
     with open(DATA_FILE,"w",encoding="utf-8") as f:
-        json.dump(data,f,ensure_ascii=False,indent=2)
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
+def _ensure_defaults(d):
+    ddef = make_default()
+    for k,v in ddef.items():
+        if k not in d: d[k] = v
+    for k,v in ddef["settings"].items():
+        if k not in d["settings"]: d["settings"][k] = v
+
+# ========== BACKUP ==========
+def do_backup():
+    if not os.path.exists(DATA_FILE): return
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+    dest = os.path.join(BACKUP_DIR, "data_{}.json".format(datetime.now().strftime("%Y-%m-%d_%H-%M")))
+    shutil.copy2(DATA_FILE, dest)
+    files = sorted([f for f in os.listdir(BACKUP_DIR) if f.endswith(".json")])
+    while len(files) > MAX_BACKUPS: os.remove(os.path.join(BACKUP_DIR, files.pop(0)))
+
+def backup_loop():
+    time.sleep(10); do_backup()
+    while True: time.sleep(BACKUP_INTERVAL); do_backup()
+
+# ========== HELPERS ==========
 def hash_pw(pw): return hashlib.sha256(pw.encode()).hexdigest()
 def safe_acc(a): return {k:v for k,v in a.items() if k!="pin_hash"}
-
 def get_rank(ranks, total_spent):
     sranks = sorted(ranks, key=lambda r: r["min_spent"], reverse=True)
     for r in sranks:
         if total_spent >= r["min_spent"]: return r["id"]
-    return "bronze"
+    return ranks[0]["id"] if ranks else "bronze"
 
-def do_backup():
-    if not os.path.exists(DATA_FILE): return
-    os.makedirs(BACKUP_DIR,exist_ok=True)
-    dest=os.path.join(BACKUP_DIR,"data_{}.json".format(datetime.now().strftime("%Y-%m-%d_%H-%M")))
-    shutil.copy2(DATA_FILE,dest)
-    files=sorted([f for f in os.listdir(BACKUP_DIR) if f.endswith(".json")])
-    while len(files)>MAX_BACKUPS: os.remove(os.path.join(BACKUP_DIR,files.pop(0)))
-
-def backup_loop():
-    time.sleep(5); do_backup()
-    while True: time.sleep(BACKUP_INTERVAL); do_backup()
-
+# ========== HTTP ==========
 class H(BaseHTTPRequestHandler):
     def log_message(self,*a): pass
 
@@ -170,7 +254,7 @@ class H(BaseHTTPRequestHandler):
             st=AVATAR_COLORS[idx%len(AVATAR_COLORS)]
             na={"id":"u"+str(int(time.time()*1000)),"username":un,"name":name,
                 "pin_hash":hash_pw(pw),"role":"user","balance":0,"total_spent":0,
-                "rank":"bronze","spin_tickets":3,"color":st["color"],"bg":st["bg"],
+                "rank":"bronze","color":st["color"],"bg":st["bg"],
                 "created":datetime.now().strftime("%d/%m/%Y")}
             d["accounts"].append(na); save_data(d)
             self.sj(200,{"ok":True,"account":safe_acc(na)}); return
@@ -263,14 +347,15 @@ class H(BaseHTTPRequestHandler):
             save_data(d); self.sj(200,{"ok":True}); return
 
         if p=="/api/spin":
-            uid=b.get("uid"); d=load_data()
+            uid=b.get("uid")
             acc=next((a for a in d["accounts"] if a["id"]==uid),None)
             if not acc: self.sj(404,{"ok":False,"error":"Khong tim thay user"}); return
             cost=d["settings"].get("spin_cost",5000)
             if acc.get("balance",0)<cost: self.sj(400,{"ok":False,"error":"So du khong du de quay"}); return
             acc["balance"]-=cost
             prizes=d["settings"].get("spin_prizes",[])
-            weights=[pz["weight"] for pz in prizes]
+            if not prizes: self.sj(400,{"ok":False,"error":"Chua co phan thuong"}); return
+            weights=[pz.get("weight",10) for pz in prizes]
             prize=random.choices(prizes,weights=weights,k=1)[0]
             pidx=prizes.index(prize)
             if prize["type"]=="balance": acc["balance"]=acc.get("balance",0)+prize["value"]
@@ -296,7 +381,11 @@ class H(BaseHTTPRequestHandler):
 
         if p=="/api/settings":
             for k,v in b.items():
-                if k in d["settings"]: d["settings"][k]=v
+                d["settings"][k]=v
+            save_data(d); self.sj(200,{"ok":True}); return
+
+        if p=="/api/spin_prizes":
+            d["settings"]["spin_prizes"]=b.get("prizes",d["settings"]["spin_prizes"])
             save_data(d); self.sj(200,{"ok":True}); return
 
         if p=="/api/balance/adjust":
@@ -323,12 +412,12 @@ class H(BaseHTTPRequestHandler):
         if p.startswith("/api/prices/"):
             pid=p.split("/")[-1]
             for pr in d["prices"]:
-                if pr["id"]==pid: pr.update({k:b[k] for k in ["name","price","unit","note","active"] if k in b})
+                if pr["id"]==pid: pr.update({k:b[k] for k in b if k in pr})
             save_data(d); self.sj(200,{"ok":True}); return
         if p.startswith("/api/cf_packages/"):
             pid=p.split("/")[-1]
             for pr in d.get("cf_packages",[]):
-                if pr["id"]==pid: pr.update({k:b[k] for k in ["name","xu","price","bonus","active"] if k in b})
+                if pr["id"]==pid: pr.update({k:b[k] for k in b if k in pr})
             save_data(d); self.sj(200,{"ok":True}); return
         self.sj(404,{"error":"not found"})
 
@@ -351,13 +440,23 @@ if __name__=="__main__":
     import socket
     try: local_ip=socket.gethostbyname(socket.gethostname())
     except: local_ip="127.0.0.1"
+
+    print("="*55)
+    print("  SHOP XU CFL - SERVER v3.0")
+    print("="*55)
+
+    if DB_URL:
+        print("  [DB] Connecting to PostgreSQL...")
+        db_init()
+    else:
+        print("  [DB] No DATABASE_URL — using local file")
+        print("  [DB] Set DATABASE_URL env var for persistent storage")
+
     threading.Thread(target=backup_loop,daemon=True).start()
     server=HTTPServer(("0.0.0.0",PORT),H)
-    print("="*50)
-    print("  SHOP XU CFL - SERVER v2.0")
     print("  Local  : http://localhost:{}".format(PORT))
     print("  Network: http://{}:{}".format(local_ip,PORT))
     print("  Admin: username=admin  password=admin123")
-    print("="*50)
+    print("="*55)
     try: server.serve_forever()
-    except KeyboardInterrupt: print("\nDừng chạy.")
+    except KeyboardInterrupt: print("\nStopped.")
