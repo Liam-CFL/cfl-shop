@@ -596,6 +596,11 @@ select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xm
             <div class="tot-v" id="totVal">0đ</div>
           </div>
           <div style="font-size:12px;color:var(--tx2);margin-bottom:1rem">Số dư: <span style="color:var(--gold);font-weight:700" id="ordBal">0đ</span></div>
+          <div style="display:flex;gap:8px;margin-bottom:1rem;align-items:center">
+            <input class="fi" id="couponInput" placeholder="🎫 Mã giảm giá (tuỳ chọn)" style="flex:1;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+            <button class="btn btn-ghost btn-sm" onclick="applyCoupon()" id="couponBtn" style="white-space:nowrap">Áp dụng</button>
+          </div>
+          <div id="couponInfo" style="font-size:12px;margin-bottom:.75rem;display:none"></div>
           <button class="btn btn-gold btn-full gsw" onclick="placeOrder()" id="ordBtn">⚡ ĐẶT HÀNG NGAY</button>
         </div>
       </div>
@@ -777,6 +782,9 @@ select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xm
         <button class="atab" onclick="aTab('aweb')">🌐 Web Con</button>
         <button class="atab" onclick="aTab('apost')">📝 Đăng bài</button>
         <button class="atab" onclick="aTab('asvc')">➕ Dịch vụ</button>
+        <button class="atab" onclick="aTab('acoupon')">🎫 Mã giảm giá</button>
+        <button class="atab" onclick="aTab('asupport')">🆘 Hỗ trợ</button>
+        <button class="atab" onclick="aTab('atgbot')">🤖 Telegram</button>
       </div>
       <div id="a-dash" class="ac"><div class="sgrid" id="stGrid"></div></div>
       <div id="a-atop" class="ac" style="display:none"><div class="card"><div class="tw"><table class="ht">
@@ -960,6 +968,62 @@ select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xm
         </div>
       </div>
 
+      <!-- COUPON MANAGEMENT -->
+      <div id="a-acoupon" class="ac" style="display:none">
+        <div class="card card-g" style="margin-bottom:1rem">
+          <div class="ct" style="font-size:15px">🎫 TẠO MÃ GIẢM GIÁ <div class="ctl"></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <div class="fg"><label>Mã giảm giá</label><input class="fi" id="cpCode" placeholder="VD: SALE10" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
+            <div class="fg"><label>% Giảm</label><input class="fi" id="cpDisc" type="number" min="1" max="99" placeholder="10" value="10"></div>
+            <div class="fg"><label>Số lần dùng tối đa</label><input class="fi" id="cpMaxUses" type="number" min="1" placeholder="100" value="100"></div>
+            <div class="fg"><label>Ghi chú</label><input class="fi" id="cpNote" placeholder="Khuyến mãi tháng 5..."></div>
+          </div>
+          <button class="btn btn-gold btn-sm" onclick="createCoupon()">🎫 Tạo mã giảm giá</button>
+        </div>
+        <div class="card">
+          <div class="ct" style="font-size:15px">📋 DANH SÁCH MÃ GIẢM GIÁ <div class="ctl"></div></div>
+          <div id="couponList"></div>
+        </div>
+      </div>
+
+      <!-- SUPPORT REQUESTS -->
+      <div id="a-asupport" class="ac" style="display:none">
+        <div class="card">
+          <div class="ct" style="font-size:15px">🆘 YÊU CẦU HỖ TRỢ <div class="ctl"></div></div>
+          <div id="supportList"></div>
+        </div>
+      </div>
+
+      <!-- TELEGRAM BOT SETTINGS -->
+      <div id="a-atgbot" class="ac" style="display:none">
+        <div class="card card-c" style="margin-bottom:1rem">
+          <div class="ct" style="font-size:15px;color:var(--cyan)">🤖 CÀI ĐẶT TELEGRAM BOT <div class="ctl"></div></div>
+          <div style="font-size:13px;color:var(--tx2);margin-bottom:1rem;line-height:1.6">
+            Bot Telegram sẽ gửi thông báo tự động khi có đơn hàng, nạp tiền, hoặc yêu cầu hỗ trợ.<br>
+            Cần set biến môi trường: <code style="background:var(--sf2);padding:2px 6px;border-radius:4px">TELEGRAM_BOT_TOKEN</code> và <code style="background:var(--sf2);padding:2px 6px;border-radius:4px">TELEGRAM_CHAT_ID</code> trên server.
+          </div>
+          <div style="display:grid;gap:10px;margin-bottom:1rem">
+            <label style="display:flex;align-items:center;gap:12px;cursor:pointer;padding:12px;background:var(--sf2);border-radius:var(--r);border:1px solid var(--br)">
+              <input type="checkbox" id="tgNotifyOrders" onchange="saveTgSettings()" style="width:18px;height:18px;accent-color:var(--gold)">
+              <div><div style="font-weight:600">🛒 Thông báo đơn hàng mới</div><div style="font-size:12px;color:var(--tx2)">Nhận tin nhắn khi có đơn mới</div></div>
+            </label>
+            <label style="display:flex;align-items:center;gap:12px;cursor:pointer;padding:12px;background:var(--sf2);border-radius:var(--r);border:1px solid var(--br)">
+              <input type="checkbox" id="tgNotifyTopups" onchange="saveTgSettings()" style="width:18px;height:18px;accent-color:var(--gold)">
+              <div><div style="font-weight:600">💳 Thông báo nạp tiền</div><div style="font-size:12px;color:var(--tx2)">Nhận tin nhắn khi có yêu cầu nạp tiền</div></div>
+            </label>
+            <label style="display:flex;align-items:center;gap:12px;cursor:pointer;padding:12px;background:var(--sf2);border-radius:var(--r);border:1px solid var(--br)">
+              <input type="checkbox" id="tgNotifySupport" onchange="saveTgSettings()" style="width:18px;height:18px;accent-color:var(--gold)">
+              <div><div style="font-weight:600">🆘 Thông báo hỗ trợ</div><div style="font-size:12px;color:var(--tx2)">Nhận tin nhắn khi có yêu cầu hỗ trợ</div></div>
+            </label>
+            <label style="display:flex;align-items:center;gap:12px;cursor:pointer;padding:12px;background:var(--sf2);border-radius:var(--r);border:1px solid var(--br2)">
+              <input type="checkbox" id="autoTopupChk" onchange="saveTgSettings()" style="width:18px;height:18px;accent-color:var(--green)">
+              <div><div style="font-weight:600;color:var(--green)">⚡ Auto duyệt nạp tiền</div><div style="font-size:12px;color:var(--tx2)">Tự động cộng tiền ngay khi khách gửi yêu cầu (không cần duyệt thủ công)</div></div>
+            </label>
+          </div>
+          <div id="tgStatus" style="font-size:12px;color:var(--tx2);padding:10px;background:var(--sf2);border-radius:var(--rsm)">Đang kiểm tra trạng thái...</div>
+        </div>
+      </div>
+
   </div><!-- end main -->
 
   <nav class="bnav">
@@ -986,6 +1050,14 @@ select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xm
       <div class="cl-ic" style="background:linear-gradient(135deg,#005ae0,#0095ff)">💬</div>
       <div><div style="font-weight:600">Zalo</div><div style="font-size:11px;color:var(--tx2)">Hỗ trợ 24/7</div></div>
     </a>
+    <div id="supportMsgBox" style="display:none;margin-top:8px">
+      <textarea id="supportMsg" class="fi" rows="3" style="height:auto;padding:10px;resize:none;font-size:12px" placeholder="Nhập nội dung cần hỗ trợ..."></textarea>
+      <button class="btn btn-gold btn-sm" style="width:100%;margin-top:6px" onclick="sendSupportRequest()">📩 Gửi yêu cầu</button>
+    </div>
+    <div class="chat-link" onclick="document.getElementById('supportMsgBox').style.display=document.getElementById('supportMsgBox').style.display==='none'?'block':'none'" style="cursor:pointer;margin-top:4px">
+      <div class="cl-ic" style="background:linear-gradient(135deg,#ff6b35,#ff3366)">🆘</div>
+      <div><div style="font-weight:600">Gửi yêu cầu hỗ trợ</div><div style="font-size:11px;color:var(--tx2)">Nhắn trực tiếp cho admin</div></div>
+    </div>
   </div>
   <div class="chat-tog" onclick="toggleChat()" style="background:linear-gradient(135deg,#f5a623,#ffd166);color:#000">💬</div>
 </div>
@@ -1283,11 +1355,17 @@ function updTot(){
   if(!selPr)return;
   const qty=parseInt(document.getElementById('qtyI').value)||1;
   const myRk=ranks.find(r=>r.id===(me?.rank||'bronze'));const disc=myRk?.discount||0;
-  const tot=Math.floor(selPr.price*qty*(1-disc/100));
-  const tv=document.getElementById('totVal');tv.textContent=fmt(tot);
+  const cpDisc=activeCoupon?activeCoupon.discount:0;
+  const totalDisc=Math.min(disc+cpDisc,100);
+  const tot=Math.floor(selPr.price*qty*(1-totalDisc/100));
+  const tv=document.getElementById('totVal');tv.textContent=fmt(tot)+'đ';
   tv.style.animation='none';requestAnimationFrame(()=>{tv.style.animation='titleGlow .5s ease'});
-  document.getElementById('discInf').textContent=disc>0?`Đã giảm ${disc}% cho rank ${myRk.name}!`:'';
+  let parts=[];
+  if(disc>0)parts.push(`Rank -${disc}%`);
+  if(cpDisc>0)parts.push(`Coupon -${cpDisc}%`);
+  document.getElementById('discInf').textContent=parts.length?`🎉 Giảm: ${parts.join(' + ')}`:'';
 }
+function updateTotal(){updTot();}
 document.addEventListener('DOMContentLoaded',()=>document.getElementById('qtyI')?.addEventListener('input',updTot));
 
 async function placeOrder(){
@@ -1296,13 +1374,16 @@ async function placeOrder(){
   const gid=document.getElementById('gameId').value.trim();
   if(!gid){toast('Nhập ID game','err');return}
   const myRk=ranks.find(r=>r.id===(me?.rank||'bronze'));const disc=myRk?.discount||0;
-  const tot=Math.floor(selPr.price*qty*(1-disc/100));
+  const cpDisc=activeCoupon?activeCoupon.discount:0;
+  const tot=Math.floor(selPr.price*qty*(1-Math.min(disc+cpDisc,100)/100));
   if((me.balance||0)<tot){toast('Số dư không đủ! Vui lòng nạp tiền.','err');return}
   const btn=document.getElementById('ordBtn');btn.disabled=true;btn.innerHTML='<span class="spin-ic"></span> Đang đặt...';
-  const r=await api.post('/api/order',{uid:me.id,price_id:selPr.id,qty,game_id:gid});
+  const couponCode=activeCoupon?activeCoupon.code:'';
+  const r=await api.post('/api/order',{uid:me.id,price_id:selPr.id,qty,game_id:gid,coupon:couponCode});
   btn.disabled=false;btn.innerHTML='⚡ ĐẶT HÀNG NGAY';
   if(r.ok){
     me.balance=r.new_balance;me.rank=r.new_rank;updBal();
+    activeCoupon=null;const ci=document.getElementById('couponInput');if(ci)ci.value='';const cif=document.getElementById('couponInfo');if(cif)cif.style.display='none';
     // Hiệu ứng đặt hàng thành công
     spawnConfetti(true);
     const btn2=document.getElementById('ordBtn');
@@ -1556,7 +1637,7 @@ async function chPw(){
 function aTab(t){
   document.querySelectorAll('.ac').forEach(el=>el.style.display='none');
   const aEl=document.getElementById('a-'+t);if(aEl)aEl.style.display='';
-  const tabIds=['dash','atop','aord','ausr','apr','acf','arn','asp','ast','aweb','apost','asvc'];
+  const tabIds=['dash','atop','aord','ausr','apr','acf','arn','asp','ast','aweb','apost','asvc','acoupon','asupport','atgbot'];
   document.querySelectorAll('.atab').forEach((b,i)=>b.classList.toggle('active',tabIds[i]===t));
   if(t==='dash')renderDash();
   if(t==='atop')renderAdmTops();
@@ -1570,6 +1651,9 @@ function aTab(t){
   if(t==='aweb')renderSubWebs();
   if(t==='apost')renderPosts();
   if(t==='asvc')renderSvcTabs();
+  if(t==='acoupon')renderCoupons();
+  if(t==='asupport')renderSupportRequests();
+  if(t==='atgbot')loadTgSettings();
 }
 async function renderAdmin(){renderDash()}
 async function renderDash(){
@@ -1947,6 +2031,148 @@ document.addEventListener('click',e=>{if(!document.getElementById('chatB').conta
 
 // ===== MODAL =====
 document.querySelectorAll('.mbg').forEach(m=>m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('show')}));
+
+// ===== COUPON =====
+let activeCoupon = null;
+async function applyCoupon() {
+  const code = document.getElementById('couponInput').value.trim().toUpperCase();
+  if (!code) { toast('Nhập mã giảm giá', 'err'); return; }
+  const btn = document.getElementById('couponBtn');
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const r = await api.post('/api/coupon/check', { code });
+    if (r.ok) {
+      activeCoupon = r.coupon;
+      const info = document.getElementById('couponInfo');
+      info.style.display = 'block';
+      info.style.color = 'var(--green)';
+      info.textContent = `✅ Mã hợp lệ: giảm thêm ${r.coupon.discount}% (còn ${r.coupon.max_uses - r.coupon.uses} lượt)`;
+      toast(`🎫 Áp dụng mã -${r.coupon.discount}%!`);
+      updateTotal();
+    } else {
+      activeCoupon = null;
+      const info = document.getElementById('couponInfo');
+      info.style.display = 'block';
+      info.style.color = 'var(--red)';
+      info.textContent = '❌ ' + (r.error || 'Mã không hợp lệ');
+      updateTotal();
+      toast(r.error || 'Mã không hợp lệ', 'err');
+    }
+  } catch(e) { toast('Lỗi kiểm tra mã', 'err'); }
+  btn.disabled = false; btn.textContent = 'Áp dụng';
+}
+
+// ===== ADMIN: COUPON MANAGEMENT =====
+async function createCoupon() {
+  const code = document.getElementById('cpCode').value.trim().toUpperCase();
+  const disc = parseInt(document.getElementById('cpDisc').value) || 10;
+  const maxUses = parseInt(document.getElementById('cpMaxUses').value) || 100;
+  const note = document.getElementById('cpNote').value.trim();
+  if (!code) { toast('Nhập mã', 'err'); return; }
+  if (disc < 1 || disc > 99) { toast('% giảm phải từ 1-99', 'err'); return; }
+  const r = await api.post('/api/coupon/create', { code, discount: disc, max_uses: maxUses, note });
+  if (r.ok) {
+    toast('✅ Tạo mã thành công!');
+    document.getElementById('cpCode').value = '';
+    document.getElementById('cpNote').value = '';
+    renderCoupons();
+  } else toast(r.error || 'Lỗi', 'err');
+}
+
+async function renderCoupons() {
+  const coupons = await api.get('/api/coupons').catch(() => []);
+  const arr = Array.isArray(coupons) ? coupons : [];
+  const el = document.getElementById('couponList');
+  if (!el) return;
+  el.innerHTML = arr.length ? arr.reverse().map(c => `
+    <div style="padding:12px 0;border-bottom:1px solid var(--br);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div style="flex:1;min-width:180px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;letter-spacing:2px;color:var(--gold)">${c.code}</span>
+          <span style="font-size:12px;padding:2px 8px;border-radius:99px;background:rgba(0,255,136,.1);color:var(--green);border:1px solid rgba(0,255,136,.2)">-${c.discount}%</span>
+          ${c.active ? '<span style="font-size:11px;padding:2px 6px;border-radius:99px;background:rgba(0,255,136,.08);color:var(--green)">✓ Hoạt động</span>' : '<span style="font-size:11px;padding:2px 6px;border-radius:99px;background:rgba(255,51,102,.08);color:var(--red)">✗ Tắt</span>'}
+        </div>
+        <div style="font-size:12px;color:var(--tx2);margin-top:3px">Đã dùng: ${c.uses}/${c.max_uses} · ${c.note || ''} · Tạo: ${c.created}</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-xs" onclick="toggleCoupon('${c.id}')">${c.active ? '🔕 Tắt' : '✅ Bật'}</button>
+        <button class="btn btn-red btn-xs" onclick="deleteCoupon('${c.id}')">Xóa</button>
+      </div>
+    </div>`).join('') : '<div class="empty"><div class="empty-ic">🎫</div><div>Chưa có mã giảm giá nào</div></div>';
+}
+
+async function toggleCoupon(id) {
+  await api.post('/api/coupon/toggle', { id });
+  renderCoupons();
+}
+async function deleteCoupon(id) {
+  if (!confirm('Xóa mã giảm giá này?')) return;
+  await api.del('/api/coupon/' + id);
+  toast('Đã xóa mã');
+  renderCoupons();
+}
+
+// ===== ADMIN: SUPPORT REQUESTS =====
+async function renderSupportRequests() {
+  const list = await api.get('/api/support_requests').catch(() => []);
+  const arr = Array.isArray(list) ? list : [];
+  const el = document.getElementById('supportList');
+  if (!el) return;
+  el.innerHTML = arr.length ? [...arr].reverse().map(s => `
+    <div style="padding:14px 0;border-bottom:1px solid var(--br)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span style="font-weight:700">${s.uname}</span>
+            <span style="font-size:11px;color:var(--tx3)">${s.uid}</span>
+            <span style="font-size:11px;padding:2px 7px;border-radius:99px;${s.status==='open'?'background:rgba(255,165,0,.12);color:var(--gold);border:1px solid rgba(255,165,0,.3)':'background:rgba(0,255,136,.08);color:var(--green);border:1px solid rgba(0,255,136,.2)'}">${s.status==='open'?'⏳ Mở':'✅ Đã xử lý'}</span>
+          </div>
+          <div style="font-size:13px;color:var(--tx);line-height:1.6;white-space:pre-wrap">${s.message}</div>
+          <div style="font-size:11px;color:var(--tx3);margin-top:6px">${s.time}</div>
+        </div>
+      </div>
+    </div>`).join('') : '<div class="empty"><div class="empty-ic">🆘</div><div>Chưa có yêu cầu hỗ trợ nào</div></div>';
+}
+
+// ===== ADMIN: TELEGRAM SETTINGS =====
+async function loadTgSettings() {
+  const s = await api.get('/api/settings').catch(() => ({}));
+  const setChk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+  setChk('tgNotifyOrders', s.telegram_notify_orders !== false);
+  setChk('tgNotifyTopups', s.telegram_notify_topups !== false);
+  setChk('tgNotifySupport', s.telegram_notify_support !== false);
+  setChk('autoTopupChk', s.auto_topup === true);
+  const st = document.getElementById('tgStatus');
+  if (st) {
+    st.innerHTML = s.telegram_notify_orders !== undefined
+      ? '✅ Cài đặt đã được tải. Để bật Telegram, set biến môi trường <b>TELEGRAM_BOT_TOKEN</b> và <b>TELEGRAM_CHAT_ID</b> trên server.'
+      : '⚠️ Không tải được cài đặt';
+  }
+}
+
+async function saveTgSettings() {
+  const getChk = id => { const el = document.getElementById(id); return el ? el.checked : false; };
+  await api.post('/api/settings', {
+    telegram_notify_orders: getChk('tgNotifyOrders'),
+    telegram_notify_topups: getChk('tgNotifyTopups'),
+    telegram_notify_support: getChk('tgNotifySupport'),
+    auto_topup: getChk('autoTopupChk'),
+  });
+  toast('✅ Đã lưu cài đặt');
+}
+
+// ===== SUPPORT REQUEST (user side) =====
+async function sendSupportRequest() {
+  const msg = document.getElementById('supportMsg')?.value?.trim();
+  if (!msg) { toast('Nhập nội dung cần hỗ trợ', 'err'); return; }
+  if (!me) { toast('Vui lòng đăng nhập', 'err'); return; }
+  const r = await api.post('/api/support/request', { uid: me.id, message: msg });
+  if (r.ok) {
+    toast('✅ Đã gửi yêu cầu hỗ trợ!');
+    document.getElementById('supportMsg').value = '';
+    document.getElementById('supportMsgBox').style.display = 'none';
+  } else toast(r.error || 'Lỗi', 'err');
+}
 
 // ===== START =====
 initBg();
