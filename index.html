@@ -4,7 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="theme-color" content="#07070f">
-<title id="pageTitle">Shop Xu CFL</title>
+<meta name="description" content="Shop Xu Sự Kiện CFL - Mua xu CrossFire Legend uy tín, nhanh chóng, giá tốt. Hỗ trợ 24/7.">
+<meta name="keywords" content="shop xu CFL, xu crossfire legend, nạp xu CF, mua xu sự kiện, shop xu game">
+<meta name="robots" content="index, follow">
+<meta name="author" content="Shop Xu CFL">
+<meta property="og:title" content="Shop Xu Sự Kiện CFL">
+<meta property="og:description" content="Mua xu CrossFire Legend uy tín, nhanh chóng. Nhiều ưu đãi, hỗ trợ 24/7.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://shopliamcfl.site/">
+<meta property="og:image" content="https://shopliamcfl.site/og-image.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Shop Xu Sự Kiện CFL">
+<meta name="twitter:description" content="Mua xu CrossFire Legend uy tín, nhanh chóng. Hỗ trợ 24/7.">
+<link rel="canonical" href="https://shopliamcfl.site/">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2307070f'/><text y='.9em' font-size='80' x='10'>⚡</text></svg>">
+<title id="pageTitle">Shop Xu CFL - Mua Xu CrossFire Legend Uy Tín</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -336,9 +350,13 @@ select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xm
 .prize-pop .modal{border-color:var(--gold);box-shadow:0 0 80px var(--gg),0 0 30px rgba(0,0,0,.5)}
 .prize-icon-wrap{font-size:80px;margin-bottom:.5rem;animation:prizeIn .6s cubic-bezier(.68,-0.55,.27,1.55)}
 @keyframes prizeIn{from{opacity:0;transform:scale(.2) rotate(-20deg)}to{opacity:1;transform:none}}
-.confetti-wrap{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-.conf{position:absolute;width:8px;height:8px;border-radius:2px;animation:confFall 2s ease-in forwards}
-@keyframes confFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(400px) rotate(720deg);opacity:0}}
+.confetti-wrap{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:9999}
+.conf{position:absolute;border-radius:3px;animation:confFall 2.5s ease-out forwards;opacity:1}
+@keyframes confFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(900deg);opacity:0}}
+@keyframes successPop{0%{transform:scale(0) rotate(-15deg);opacity:0}60%{transform:scale(1.15) rotate(5deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes floatUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-80px);opacity:0}}
+.float-reward{position:fixed;pointer-events:none;font-size:18px;font-weight:700;color:var(--gold);z-index:9999;animation:floatUp 1.2s ease-out forwards;white-space:nowrap}
+.prize-pop .modal{animation:successPop .5s cubic-bezier(.34,1.56,.64,1)!important}
 
 /* ===== TOAST ===== */
 #toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);
@@ -413,8 +431,11 @@ select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xm
   .pgrid{grid-template-columns:1fr 1fr}
   .cfgrid{grid-template-columns:1fr 1fr}
   .wheel-cont{width:260px;height:260px}
+  #wheelCanvas{width:260px!important;height:260px!important}
   .tc2{grid-template-columns:1fr!important}
   .prize-row{grid-template-columns:1fr 1fr;grid-template-rows:auto auto}
+  .spin-layout{grid-template-columns:1fr!important}
+  .wheel-wrap{padding:.5rem 0}
 }
 @media(min-width:681px){
   .mbg{align-items:center}
@@ -512,6 +533,7 @@ select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xm
         <div class="hero-sub">Mua xu tự động · Bảo hành giao dịch · Hỗ trợ tức thì</div>
       </div>
       <div class="ann" id="annBar"><span style="font-size:18px;flex-shrink:0">📢</span><span id="annTxt" class="ann-text">Đang tải...</span></div>
+      <div id="pinnedPosts" style="display:none"></div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem">
         <div class="card card-g" style="cursor:pointer;transition:all .3s" onclick="go('order')" onmouseenter="this.style.transform='translateY(-4px)'" onmouseleave="this.style.transform=''">
           <div style="font-size:30px;margin-bottom:.6rem;filter:drop-shadow(0 0 12px var(--gold))">⚡</div>
@@ -533,6 +555,11 @@ select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xm
           <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:var(--cyan)">NẠP TIỀN</div>
           <div style="font-size:12px;color:var(--tx2);margin-top:4px">CK · MoMo · QR</div>
         </div>
+      </div>
+      <!-- TOP NẠP TUẦN -->
+      <div class="card" style="margin-bottom:1rem;border-color:rgba(245,166,35,.2)">
+        <div class="ct">🏆 TOP NẠP TUẦN <div class="ctl"></div><span style="font-size:11px;color:var(--tx3)" id="topWeekLabel"></span></div>
+        <div id="topWeekList"><div class="empty"><div class="empty-ic">🏆</div><div>Chưa có dữ liệu</div></div></div>
       </div>
       <div class="card card-g">
         <div class="ct">📊 BẢNG GIÁ <div class="ctl"></div></div>
@@ -601,7 +628,7 @@ select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xm
         <div class="pt" style="color:var(--pur)">🎰 VÒNG QUAY MAY MẮN <div class="ptl"></div></div>
         <div class="ps">Quay để nhận thưởng · Chi phí: <span id="spinCostLbl" style="color:var(--gold);font-weight:700">5,000đ</span>/lượt</div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start">
+      <div class="spin-layout" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start">
         <div>
           <div class="wheel-wrap">
             <div class="wheel-cont">
@@ -747,6 +774,9 @@ select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xm
         <button class="atab" onclick="aTab('arn')">🏆 Cấp bậc</button>
         <button class="atab" onclick="aTab('asp')">🎰 Vòng quay</button>
         <button class="atab" onclick="aTab('ast')">🔧 Cài đặt</button>
+        <button class="atab" onclick="aTab('aweb')">🌐 Web Con</button>
+        <button class="atab" onclick="aTab('apost')">📝 Đăng bài</button>
+        <button class="atab" onclick="aTab('asvc')">➕ Dịch vụ</button>
       </div>
       <div id="a-dash" class="ac"><div class="sgrid" id="stGrid"></div></div>
       <div id="a-atop" class="ac" style="display:none"><div class="card"><div class="tw"><table class="ht">
@@ -841,6 +871,94 @@ select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xm
         </div>
       </div>
     </div>
+
+      <!-- WEB CON -->
+      <div id="a-aweb" class="ac" style="display:none">
+        <div class="card card-c" style="margin-bottom:1rem">
+          <div class="ct" style="font-size:15px;color:var(--cyan)">🌐 TẠO WEB CON CHO CTV <div class="ctl"></div></div>
+          <div style="font-size:13px;color:var(--tx2);margin-bottom:1rem;line-height:1.8">
+            Mỗi CTV có một trang web riêng với link dạng <strong style="color:var(--cyan)">shopliamcfl.site/?ref=username</strong><br>
+            CTV dùng link này để giới thiệu khách. Đơn hàng qua link sẽ được ghi nhận.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <div class="fg"><label>Chọn CTV</label>
+              <select class="fi" id="webCtvSel"><option value="">-- Chọn CTV --</option></select>
+            </div>
+            <div class="fg"><label>Tên hiển thị web con</label>
+              <input class="fi" id="webCtvName" placeholder="VD: Shop Xu Của Nam">
+            </div>
+            <div class="fg"><label>Thông báo riêng</label>
+              <input class="fi" id="webCtvAnn" placeholder="Ưu đãi đặc biệt khi mua qua link này!">
+            </div>
+            <div class="fg"><label>Màu chủ đề (hex)</label>
+              <input class="fi" id="webCtvColor" placeholder="#00d4ff" value="#00d4ff">
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-cyan btn-sm" onclick="createSubWeb()">🌐 Tạo / Cập nhật web con</button>
+          </div>
+        </div>
+        <div class="card" id="subWebList">
+          <div class="ct" style="font-size:15px">📋 DANH SÁCH WEB CON <div class="ctl"></div></div>
+          <div id="subWebItems"></div>
+        </div>
+      </div>
+
+      <!-- ĐĂNG BÀI -->
+      <div id="a-apost" class="ac" style="display:none">
+        <div class="card card-g" style="margin-bottom:1rem">
+          <div class="ct" style="font-size:15px">📝 ĐĂNG BÀI THÔNG BÁO <div class="ctl"></div></div>
+          <div class="fg"><label>Tiêu đề bài</label><input class="fi" id="postTitle" placeholder="Thông báo khuyến mãi tháng 5..."></div>
+          <div class="fg"><label>Nội dung</label><textarea class="fi" id="postBody" rows="5" style="height:auto;padding:10px;resize:vertical" placeholder="Nội dung chi tiết..."></textarea></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="fg"><label>Loại bài</label>
+              <select class="fi" id="postType">
+                <option value="news">📰 Tin tức</option>
+                <option value="promo">🎁 Khuyến mãi</option>
+                <option value="event">🎉 Sự kiện</option>
+                <option value="notice">📢 Thông báo</option>
+              </select>
+            </div>
+            <div class="fg"><label>Ghim bài (hiện ở trang chủ)</label>
+              <select class="fi" id="postPin">
+                <option value="0">Không ghim</option>
+                <option value="1">Ghim trang chủ</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:.5rem">
+            <button class="btn btn-gold btn-sm" onclick="savePost()">📝 Đăng bài</button>
+            <button class="btn btn-ghost btn-sm" onclick="clearPost()">🗑 Xóa form</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ct" style="font-size:15px">📋 BÀI ĐÃ ĐĂNG <div class="ctl"></div></div>
+          <div id="postList"></div>
+        </div>
+      </div>
+
+      <!-- TAB DỊCH VỤ TÙY CHỈNH -->
+      <div id="a-asvc" class="ac" style="display:none">
+        <div class="card card-p" style="margin-bottom:1rem">
+          <div class="ct" style="font-size:15px;color:var(--pur)">➕ TẠO TAB DỊCH VỤ MỚI <div class="ctl"></div></div>
+          <div style="font-size:13px;color:var(--tx2);margin-bottom:1rem">Thêm tab dịch vụ riêng (VD: Vũ khí, Skin, Item...) không cần sửa code</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <div class="fg"><label>Icon (emoji)</label><input class="fi" id="svcIcon" placeholder="🔫" maxlength="4"></div>
+            <div class="fg"><label>Tên tab</label><input class="fi" id="svcTabName" placeholder="VD: Vũ Khí CF"></div>
+            <div class="fg" style="grid-column:1/-1"><label>Mô tả ngắn</label><input class="fi" id="svcDesc" placeholder="Mô tả dịch vụ này..."></div>
+          </div>
+          <div style="font-size:12px;color:var(--tx2);font-weight:700;text-transform:uppercase;margin-bottom:.75rem">Thêm mặt hàng trong tab này:</div>
+          <div id="svcItems" style="margin-bottom:1rem"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-pur btn-sm" onclick="addSvcItem()">+ Thêm mặt hàng</button>
+            <button class="btn btn-gold btn-sm" onclick="saveSvcTab()">💾 Tạo tab dịch vụ</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ct" style="font-size:15px">📋 CÁC TAB DỊCH VỤ <div class="ctl"></div></div>
+          <div id="svcTabList"></div>
+        </div>
+      </div>
 
   </div><!-- end main -->
 
@@ -980,8 +1098,8 @@ function clearSession(){localStorage.removeItem('cfl_session')}
 async function tryAutoLogin(){
   const saved=localStorage.getItem('cfl_session');
   if(!saved)return false;
-  const {username,ts}=JSON.parse(saved);
-  if(Date.now()-ts>7*24*60*60*1000){clearSession();return false}// 7 days
+  const {username,ts,expDays=1}=JSON.parse(saved);
+  if(Date.now()-ts>expDays*24*60*60*1000){clearSession();return false}
   const savedPw=localStorage.getItem('cfl_pw_'+username);
   if(!savedPw)return false;
   try{
@@ -1003,10 +1121,10 @@ async function doLogin(){
     const r=await api.post('/api/login',{username:u,password:p});
     if(r.ok){
       me=r.account;
-      if(document.getElementById('rememberMe')?.checked){
-        localStorage.setItem('cfl_session',JSON.stringify({username:u,ts:Date.now()}));
-        localStorage.setItem('cfl_pw_'+u,p);
-      }
+      // Luôn lưu session, checkbox chỉ ảnh hưởng đến thời hạn
+      const expDays=document.getElementById('rememberMe')?.checked?30:1;
+      localStorage.setItem('cfl_session',JSON.stringify({username:u,ts:Date.now(),expDays}));
+      localStorage.setItem('cfl_pw_'+u,p);
       await initApp();
     }else e.textContent=r.error||'Lỗi đăng nhập';
   }catch{e.textContent='⚠️ Không kết nối được server'}
@@ -1029,6 +1147,8 @@ async function initApp(){
   await Promise.all([loadSt(),loadPrices(),loadRanks(),loadCF()]);
   setupNav();
   if(me.role==='admin')document.getElementById('admTab').style.display='';
+  checkRef();
+  reloadSvcPages();
   go('home');
   setInterval(async()=>{
     if(!me)return;
@@ -1046,7 +1166,7 @@ function setupNav(){
   document.getElementById('heroTitle').textContent=st.shop_name?.toUpperCase()||'SHOP XU SỰ KIỆN CFL';
   document.getElementById('annTxt').textContent=st.announcement||'';
   document.getElementById('authSN').textContent=st.shop_name||'SHOP XU CFL';
-  document.title=st.shop_name||'Shop Xu CFL';
+  document.title=(st.shop_name||'Shop Xu CFL')+' - Mua Xu CrossFire Legend Uy Tín';
   const av=document.getElementById('navAv');
   av.textContent=me.name[0].toUpperCase();
   av.style.background=me.bg||'#1a1400';av.style.color=me.color||'#f5a623';
@@ -1094,8 +1214,35 @@ function toast(msg,type='ok'){
 function sbadge(s){const m={pending:'<span class="badge bg">⏳ Chờ</span>',approved:'<span class="badge bgr">✅ Duyệt</span>',completed:'<span class="badge bgr">✅ Xong</span>',rejected:'<span class="badge br-">❌ Từ chối</span>',cancelled:'<span class="badge br-">❌ Hủy</span>'};return m[s]||`<span class="badge bgy">${s}</span>`}
 
 // ===== HOME =====
+async function renderTopWeek(){
+  try{
+    const [tops,accs]=await Promise.all([api.get('/api/topups'),api.get('/api/accounts/all')]);
+    const now=new Date();const weekAgo=now.getTime()-7*24*60*60*1000;
+    const accMap=accs.reduce((m,a)=>{m[a.id]=a;return m},{});
+    const weekTops=tops.filter(t=>t.status==='approved'&&new Date(t.approved_time||t.time).getTime()>weekAgo);
+    const agg={};
+    weekTops.forEach(t=>{agg[t.uid]=(agg[t.uid]||0)+t.amount});
+    const sorted=Object.entries(agg).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const medals=['🥇','🥈','🥉'];
+    const now2=new Date();
+    const d0=new Date(now2);d0.setDate(d0.getDate()-now2.getDay());
+    document.getElementById('topWeekLabel').textContent=`Tuần ${d0.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'})} - ${now2.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'})}`;
+    if(!sorted.length){document.getElementById('topWeekList').innerHTML='<div class="empty"><div class="empty-ic">🏆</div><div>Chưa có dữ liệu tuần này</div></div>';return}
+    document.getElementById('topWeekList').innerHTML=sorted.map(([uid,amt],i)=>{
+      const acc=accMap[uid];const name=acc?acc.name:uid.slice(0,8)+'...';
+      const rk=ranks.find(r=>r.id===(acc?.rank||'bronze'))||{color:'#cd7f32'};
+      return`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--br)">
+        <div style="font-size:${i<3?'22px':'14px'};font-weight:700;min-width:28px;text-align:center">${medals[i]||'#'+(i+1)}</div>
+        <div style="width:34px;height:34px;border-radius:50%;background:${acc?.bg||'#1a1400'};color:${acc?.color||'#f5a623'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;border:1.5px solid ${rk.color}55;flex-shrink:0">${name[0]}</div>
+        <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div><div style="font-size:11px;color:var(--tx2)">@${acc?.username||'—'}</div></div>
+        <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--gold)">${fmt(amt)}</div>
+      </div>`;}).join('');
+  }catch(e){console.warn('topWeek err',e)}
+}
 function renderHome(){
   const myRk=ranks.find(r=>r.id===(me?.rank||'bronze'))||{discount:0,name:'Đồng'};
+  renderTopWeek();
+  renderPinnedPosts();
   document.getElementById('homePr').innerHTML=prices.filter(p=>p.active).map(p=>{
     const disc=myRk.discount||0;
     const dp=disc>0?`<span style="color:var(--green);font-size:11px">(-${disc}% rank ${myRk.name})</span>`:'';
@@ -1154,7 +1301,15 @@ async function placeOrder(){
   const btn=document.getElementById('ordBtn');btn.disabled=true;btn.innerHTML='<span class="spin-ic"></span> Đang đặt...';
   const r=await api.post('/api/order',{uid:me.id,price_id:selPr.id,qty,game_id:gid});
   btn.disabled=false;btn.innerHTML='⚡ ĐẶT HÀNG NGAY';
-  if(r.ok){me.balance=r.new_balance;me.rank=r.new_rank;updBal();toast('✅ Đặt hàng thành công!');go('history')}
+  if(r.ok){
+    me.balance=r.new_balance;me.rank=r.new_rank;updBal();
+    // Hiệu ứng đặt hàng thành công
+    spawnConfetti(true);
+    const btn2=document.getElementById('ordBtn');
+    const rect=btn2.getBoundingClientRect();
+    showFloatReward('✅ Đặt hàng thành công!',rect.left,rect.top-30);
+    setTimeout(()=>go('history'),800);
+  }
   else toast(r.error||'Lỗi','err');
 }
 
@@ -1184,7 +1339,14 @@ async function placeCF(){
   const btn=document.getElementById('cfBtn');btn.disabled=true;btn.innerHTML='<span class="spin-ic"></span>';
   const r=await api.post('/api/cf_order',{uid:me.id,pkg_id:selCF.id,game_id:gid,server:sv});
   btn.disabled=false;btn.innerHTML='🎮 NẠP NGAY';
-  if(r.ok){me.balance=r.new_balance;updBal();toast('✅ Đặt nạp Xu CF thành công!');go('history')}
+  if(r.ok){
+    me.balance=r.new_balance;updBal();
+    spawnConfetti(true);
+    const btn2=document.getElementById('cfBtn');
+    const rect=btn2.getBoundingClientRect();
+    showFloatReward('✅ Nạp CF thành công!',rect.left,rect.top-30);
+    setTimeout(()=>go('history'),800);
+  }
   else toast(r.error||'Lỗi','err');
 }
 
@@ -1197,10 +1359,9 @@ function renderSpin(){
   updBal();drawWheel();loadSpinHist();renderPrizeChips();
 }
 function renderPrizeChips(){
-  const total=curSpin.prizes.reduce((s,p)=>s+(p.weight||0),0);
   document.getElementById('prizeList').innerHTML=curSpin.prizes.map(p=>`
     <div style="padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;background:${p.color||'#333'}22;color:${p.color||'#888'};border:1px solid ${p.color||'#333'}44">
-      ${p.label} <span style="opacity:.6">${total>0?Math.round(p.weight/total*100):0}%</span>
+      ${p.label}
     </div>`).join('');
 }
 function drawWheel(offset=0){
@@ -1232,15 +1393,22 @@ async function doSpin(){
   const r=await api.post('/api/spin',{uid:me.id});
   if(!r.ok){toast(r.error||'Lỗi','err');spinning=false;btn.disabled=false;btn.innerHTML='🎰 QUAY NGAY!';return}
   me.balance=r.new_balance;updBal();
-  const n=curSpin.prizes.length;const arc=360/n;
-  const spinD=5+Math.random()*3;
-  const target=spinD*360+(n-r.prize_index)*arc-arc/2+Math.random()*arc*.5-arc*.25;
-  let start=null;const dur=4200;
-  function ease(t){return 1-Math.pow(1-t,4)}
+  const n=curSpin.prizes.length;const arcRad=2*Math.PI/n;
+  // Mũi tên ở top = -PI/2. Trung tâm ô prize_index phải dừng ở -PI/2
+  // offset_final + prize_index*arcRad + arcRad/2 ≡ -PI/2 (mod 2PI)
+  const extraSpins=5+Math.floor(Math.random()*3); // số vòng thêm
+  // jitter nhỏ trong ô (±30% của nửa cung) để không dừng đúng tâm
+  const jitter=(Math.random()-.5)*arcRad*0.6;
+  const finalAngle=-Math.PI/2 - r.prize_index*arcRad - arcRad/2 + jitter;
+  const target=extraSpins*2*Math.PI + finalAngle;
+  let start=null;const dur=4500;
+  let lastOffset=0;
+  function ease(t){return t<1?1-Math.pow(1-t,4):1}
   function animate(ts){
     if(!start)start=ts;
     const p=Math.min((ts-start)/dur,1);
-    drawWheel((ease(p)*target)*Math.PI/180);
+    lastOffset=ease(p)*target;
+    drawWheel(lastOffset);
     if(p<1)requestAnimationFrame(animate);
     else{
       spinning=false;btn.disabled=false;btn.innerHTML='🎰 QUAY NGAY!';
@@ -1255,18 +1423,34 @@ function showPrize(prize){
   document.getElementById('prIc').textContent=icons[prize.type]||'🎁';
   document.getElementById('prLbl').textContent=prize.label;
   document.getElementById('prDesc').innerHTML=desc[prize.type]||'Phần thưởng bí ẩn!';
-  spawnConfetti();
+  const isWin=prize.type!=='none';
+  spawnConfetti(isWin);
   document.getElementById('prModal').classList.add('show');
+  if(isWin){
+    // Âm thanh giả bằng visual
+    document.getElementById('prModal').querySelector('.modal').style.animation='none';
+    requestAnimationFrame(()=>{document.getElementById('prModal').querySelector('.modal').style.animation='';});
+  }
 }
-function spawnConfetti(){
-  const wrap=document.getElementById('confettiWrap');wrap.innerHTML='';
-  if(document.getElementById('prLbl').textContent==='Thử lại'||document.getElementById('prLbl').textContent==='Thu lai')return;
-  const colors=['#f5a623','#00d4ff','#ff3366','#00ff88','#a855f7','#ffd166'];
-  for(let i=0;i<25;i++){
+function spawnConfetti(isWin=true){
+  // Xóa confetti cũ
+  document.querySelectorAll('.confetti-wrap').forEach(w=>w.innerHTML='');
+  let wrap=document.getElementById('confettiWrap');
+  if(!wrap){wrap=document.createElement('div');wrap.className='confetti-wrap';wrap.id='confettiWrap';document.body.appendChild(wrap);}
+  wrap.innerHTML='';
+  if(!isWin)return;
+  const colors=['#f5a623','#00d4ff','#ff3366','#00ff88','#a855f7','#ffd166','#fff'];
+  for(let i=0;i<60;i++){
     const c=document.createElement('div');c.className='conf';
-    c.style.cssText=`left:${Math.random()*100}%;top:0;background:${colors[Math.floor(Math.random()*colors.length)]};width:${4+Math.random()*6}px;height:${4+Math.random()*6}px;animation-delay:${Math.random()*.8}s;animation-duration:${1.5+Math.random()}s`;
+    const shape=Math.random()>.5?'3px':'50%';
+    c.style.cssText=`left:${Math.random()*100}%;top:-10px;background:${colors[Math.floor(Math.random()*colors.length)]};width:${5+Math.random()*8}px;height:${5+Math.random()*8}px;border-radius:${shape};animation-delay:${Math.random()*.9}s;animation-duration:${1.8+Math.random()*1.2}s`;
     wrap.appendChild(c);
   }
+}
+function showFloatReward(text,x,y){
+  const el=document.createElement('div');el.className='float-reward';
+  el.textContent=text;el.style.cssText=`left:${x}px;top:${y}px`;
+  document.body.appendChild(el);setTimeout(()=>el.remove(),1300);
 }
 async function loadSpinHist(){
   const sh=await api.get('/api/spin_history');
@@ -1371,8 +1555,9 @@ async function chPw(){
 // ===== ADMIN =====
 function aTab(t){
   document.querySelectorAll('.ac').forEach(el=>el.style.display='none');
-  document.getElementById('a-'+t).style.display='';
-  document.querySelectorAll('.atab').forEach((b,i)=>b.classList.toggle('active',['dash','atop','aord','ausr','apr','acf','arn','asp','ast'][i]===t));
+  const aEl=document.getElementById('a-'+t);if(aEl)aEl.style.display='';
+  const tabIds=['dash','atop','aord','ausr','apr','acf','arn','asp','ast','aweb','apost','asvc'];
+  document.querySelectorAll('.atab').forEach((b,i)=>b.classList.toggle('active',tabIds[i]===t));
   if(t==='dash')renderDash();
   if(t==='atop')renderAdmTops();
   if(t==='aord')renderAdmOrds();
@@ -1382,6 +1567,9 @@ function aTab(t){
   if(t==='arn')renderRnkEd();
   if(t==='asp')renderSpAdmin();
   if(t==='ast')fillSt();
+  if(t==='aweb')renderSubWebs();
+  if(t==='apost')renderPosts();
+  if(t==='asvc')renderSvcTabs();
 }
 async function renderAdmin(){renderDash()}
 async function renderDash(){
@@ -1569,6 +1757,188 @@ async function admChPw(){
   else toast(r.error||'Lỗi','err');
 }
 async function doBackup(){await api.post('/api/backup/now',{});toast('✅ Backup thành công!')}
+
+// ===== WEB CON (Sub-websites) =====
+async function renderSubWebs(){
+  // Điền dropdown CTV
+  const accs=await api.get('/api/accounts/all');
+  const ctvs=accs.filter(a=>a.role!=='admin');
+  document.getElementById('webCtvSel').innerHTML='<option value="">-- Chọn CTV --</option>'+
+    ctvs.map(a=>`<option value="${a.id}">${a.name} (@${a.username})</option>`).join('');
+  // Load sub webs
+  const webs=await api.get('/api/subwebs').catch(()=>[]);
+  const webArr=Array.isArray(webs)?webs:[];
+  document.getElementById('subWebItems').innerHTML=webArr.length?webArr.map(w=>{
+    const acc=accs.find(a=>a.id===w.uid);
+    return`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--br);gap:10px;flex-wrap:wrap">
+      <div>
+        <div style="font-weight:700;font-size:14px">${w.name||acc?.name||'—'}</div>
+        <div style="font-size:12px;color:var(--tx2)">CTV: @${acc?.username||'—'}</div>
+        <a href="/?ref=${acc?.username}" target="_blank" style="font-size:12px;color:var(--cyan);text-decoration:none">🔗 shopliamcfl.site/?ref=${acc?.username}</a>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-xs" onclick="cpTxt('https://shopliamcfl.site/?ref=${acc?.username||''}')">📋 Copy link</button>
+        <button class="btn btn-red btn-xs" onclick="delSubWeb('${w.id}')">Xóa</button>
+      </div>
+    </div>`;}).join(''):'<div class="empty"><div>Chưa có web con nào</div></div>';
+}
+async function createSubWeb(){
+  const uid=document.getElementById('webCtvSel').value;
+  const name=document.getElementById('webCtvName').value.trim();
+  const ann=document.getElementById('webCtvAnn').value.trim();
+  const color=document.getElementById('webCtvColor').value.trim()||'#00d4ff';
+  if(!uid){toast('Chọn CTV trước!','err');return}
+  const r=await api.post('/api/subwebs',{uid,name,announcement:ann,color});
+  if(r.ok){toast('✅ Tạo web con thành công!');renderSubWebs();}
+  else toast(r.error||'Lỗi','err');
+}
+async function delSubWeb(id){
+  if(!confirm('Xóa web con này?'))return;
+  await api.del('/api/subwebs/'+id);
+  toast('Đã xóa');renderSubWebs();
+}
+
+// Kiểm tra ref khi load trang
+function checkRef(){
+  const params=new URLSearchParams(window.location.search);
+  const ref=params.get('ref');
+  if(ref)sessionStorage.setItem('cfl_ref',ref);
+}
+
+// ===== ĐĂNG BÀI =====
+async function renderPosts(){
+  const posts=await api.get('/api/posts').catch(()=>[]);
+  const arr=Array.isArray(posts)?posts:[];
+  const typeMap={news:'📰 Tin tức',promo:'🎁 Khuyến mãi',event:'🎉 Sự kiện',notice:'📢 Thông báo'};
+  document.getElementById('postList').innerHTML=arr.length?[...arr].reverse().map(p=>`
+    <div style="padding:14px 0;border-bottom:1px solid var(--br)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span style="font-size:11px;padding:2px 8px;border-radius:99px;background:rgba(245,166,35,.1);color:var(--gold);border:1px solid rgba(245,166,35,.2)">${typeMap[p.type]||p.type}</span>
+            ${p.pin?'<span style="font-size:10px;padding:2px 6px;border-radius:99px;background:rgba(255,51,102,.1);color:var(--red);border:1px solid rgba(255,51,102,.2)">📌 Ghim</span>':''}
+          </div>
+          <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700">${p.title}</div>
+          <div style="font-size:13px;color:var(--tx2);margin-top:4px;line-height:1.6;white-space:pre-wrap">${p.body.slice(0,120)}${p.body.length>120?'...':''}</div>
+          <div style="font-size:11px;color:var(--tx3);margin-top:6px">${p.time}</div>
+        </div>
+        <button class="btn btn-red btn-xs" onclick="delPost('${p.id}')">Xóa</button>
+      </div>
+    </div>`).join(''):'<div class="empty"><div class="empty-ic">📝</div><div>Chưa có bài đăng</div></div>';
+}
+async function savePost(){
+  const title=document.getElementById('postTitle').value.trim();
+  const body=document.getElementById('postBody').value.trim();
+  const type=document.getElementById('postType').value;
+  const pin=document.getElementById('postPin').value==='1';
+  if(!title||!body){toast('Nhập tiêu đề và nội dung','err');return}
+  const r=await api.post('/api/posts',{title,body,type,pin});
+  if(r.ok){toast('✅ Đã đăng bài!');clearPost();renderPosts();}
+  else toast(r.error||'Lỗi','err');
+}
+function clearPost(){['postTitle','postBody'].forEach(id=>document.getElementById(id).value='');}
+async function delPost(id){if(!confirm('Xóa bài?'))return;await api.del('/api/posts/'+id);toast('Đã xóa');renderPosts();}
+
+// Render bài ghim ở trang chủ
+async function renderPinnedPosts(){
+  try{
+    const posts=await api.get('/api/posts').catch(()=>[]);
+    const pinned=(Array.isArray(posts)?posts:[]).filter(p=>p.pin).reverse().slice(0,3);
+    const container=document.getElementById('pinnedPosts');
+    if(!container||!pinned.length){if(container)container.style.display='none';return}
+    const typeColors={news:'var(--cyan)',promo:'var(--gold)',event:'var(--pur)',notice:'var(--red)'};
+    const typeMap={news:'📰',promo:'🎁',event:'🎉',notice:'📢'};
+    container.style.display='';
+    container.innerHTML=`<div class="card" style="margin-bottom:1rem;border-color:rgba(168,85,247,.2)">
+      <div class="ct" style="font-size:15px;color:var(--pur)">📌 TIN MỚI NHẤT <div class="ctl"></div></div>
+      ${pinned.map(p=>`<div style="padding:12px 0;border-bottom:1px solid var(--br)">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <span style="font-size:16px">${typeMap[p.type]||'📢'}</span>
+          <span style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:${typeColors[p.type]||'var(--gold)}'}">${p.title}</span>
+        </div>
+        <div style="font-size:13px;color:var(--tx2);line-height:1.6;white-space:pre-wrap">${p.body}</div>
+        <div style="font-size:11px;color:var(--tx3);margin-top:4px">${p.time}</div>
+      </div>`).join('')}
+    </div>`;
+  }catch(e){}
+}
+
+// ===== TAB DỊCH VỤ TÙY CHỈNH =====
+let svcItemsData=[];
+function addSvcItem(){
+  svcItemsData.push({name:'',price:0,note:''});
+  renderSvcItemInputs();
+}
+function renderSvcItemInputs(){
+  document.getElementById('svcItems').innerHTML=svcItemsData.map((it,i)=>`
+    <div style="display:grid;grid-template-columns:1fr 100px 1fr auto;gap:8px;align-items:center;margin-bottom:8px">
+      <input class="fi" style="height:34px;font-size:12px" placeholder="Tên mặt hàng" value="${it.name}" onchange="svcItemsData[${i}].name=this.value">
+      <input class="fi" style="height:34px;font-size:12px" type="number" placeholder="Giá" value="${it.price}" onchange="svcItemsData[${i}].price=parseInt(this.value)||0">
+      <input class="fi" style="height:34px;font-size:12px" placeholder="Ghi chú" value="${it.note}" onchange="svcItemsData[${i}].note=this.value">
+      <button class="btn btn-red btn-xs" onclick="svcItemsData.splice(${i},1);renderSvcItemInputs()">✕</button>
+    </div>`).join('')||'<div style="font-size:12px;color:var(--tx3);padding:8px 0">Nhấn "+ Thêm mặt hàng" để bắt đầu</div>';
+}
+async function saveSvcTab(){
+  const icon=document.getElementById('svcIcon').value.trim()||'🛍';
+  const name=document.getElementById('svcTabName').value.trim();
+  const desc=document.getElementById('svcDesc').value.trim();
+  if(!name){toast('Nhập tên tab','err');return}
+  if(!svcItemsData.length){toast('Thêm ít nhất 1 mặt hàng','err');return}
+  const r=await api.post('/api/svc_tabs',{icon,name,desc,items:svcItemsData});
+  if(r.ok){
+    toast('✅ Tạo tab dịch vụ thành công!');
+    svcItemsData=[];renderSvcItemInputs();
+    ['svcIcon','svcTabName','svcDesc'].forEach(id=>document.getElementById(id).value='');
+    renderSvcTabs();
+    reloadSvcPages();
+  }else toast(r.error||'Lỗi','err');
+}
+async function renderSvcTabs(){
+  const tabs=await api.get('/api/svc_tabs').catch(()=>[]);
+  const arr=Array.isArray(tabs)?tabs:[];
+  document.getElementById('svcTabList').innerHTML=arr.length?arr.map(t=>`
+    <div style="padding:12px 0;border-bottom:1px solid var(--br)">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div>
+          <div style="font-size:16px;font-weight:700">${t.icon} ${t.name}</div>
+          <div style="font-size:12px;color:var(--tx2)">${t.desc||''} · ${(t.items||[]).length} mặt hàng</div>
+        </div>
+        <button class="btn btn-red btn-xs" onclick="delSvcTab('${t.id}')">Xóa</button>
+      </div>
+    </div>`).join(''):'<div class="empty"><div>Chưa có tab dịch vụ nào</div></div>';
+}
+async function delSvcTab(id){if(!confirm('Xóa tab này?'))return;await api.del('/api/svc_tabs/'+id);toast('Đã xóa');renderSvcTabs();reloadSvcPages();}
+async function reloadSvcPages(){
+  const tabs=await api.get('/api/svc_tabs').catch(()=>[]);
+  buildSvcPages(Array.isArray(tabs)?tabs:[]);
+}
+function buildSvcPages(tabs){
+  // Xóa tab cũ
+  document.querySelectorAll('.svc-tab-btn').forEach(el=>el.remove());
+  document.querySelectorAll('.svc-page').forEach(el=>el.remove());
+  document.querySelectorAll('.svc-bn').forEach(el=>el.remove());
+  if(!tabs.length)return;
+  const navTabs=document.querySelector('.nav-tabs');
+  const mainDiv=document.querySelector('.main');
+  const bnavW=document.querySelector('.bnav-w');
+  tabs.forEach(t=>{
+    // Nav tab
+    const btn=document.createElement('button');btn.className='nt svc-tab-btn';
+    btn.innerHTML=`${t.icon} ${t.name}`;btn.onclick=()=>go('svc-'+t.id);
+    navTabs.appendChild(btn);
+    // Page
+    const pg=document.createElement('div');pg.id='svc-'+t.id;pg.className='page svc-page';
+    pg.innerHTML=`<div class="ph"><div class="pt">${t.icon} ${t.name.toUpperCase()} <div class="ptl"></div></div><div class="ps">${t.desc||''}</div></div>
+    <div class="pgrid">${(t.items||[]).map(it=>`<div class="pc" onclick="">
+      <div class="pc-ic">${t.icon}</div>
+      <div class="pc-n">${it.name}</div>
+      <div class="pc-p">${fmt(it.price)}<span>/cái</span></div>
+      <div class="pc-note">${it.note||''}</div>
+      <button class="btn btn-go btn-sm" style="margin-top:8px;width:100%" onclick="event.stopPropagation();toast('Liên hệ Zalo để đặt: ${it.name}','info')">🛒 Đặt mua</button>
+    </div>`).join('')||'<div class="empty" style="grid-column:1/-1"><div>Chưa có mặt hàng</div></div>'}</div>`;
+    mainDiv.appendChild(pg);
+  });
+}
 
 // ===== CHAT =====
 let chatOpen=false;
