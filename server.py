@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 import urllib.request, urllib.parse as uparse
 
 # ========== TELEGRAM BOT ==========
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_BOT_TOKEN = "7654400767:AAEAn3XScjjcavAWnu9g-lG0Q6VBMyF1OQM"
 TELEGRAM_CHAT_ID   = os.environ.get("TELEGRAM_CHAT_ID", "")
 
 def tg_send(msg):
