@@ -1,13 +1,35 @@
 #!/usr/bin/env python3
 """
-Shop Xu Su Kien CFL - Server v3
+Shop Xu Su Kien CFL - Server v4
 - PostgreSQL (Supabase) for persistent storage
 - Falls back to JSON file if no DB configured
+- Telegram Bot notifications (orders, topups, support)
+- Auto topup approval
+- Coupon / discount code system
 """
 import json, os, hashlib, shutil, threading, time, random
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
+import urllib.request, urllib.parse as uparse
+
+# ========== TELEGRAM BOT ==========
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID   = os.environ.get("TELEGRAM_CHAT_ID", "")
+
+def tg_send(msg):
+    """Send a message to Telegram (non-blocking)."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return
+    def _send():
+        try:
+            url = "https://api.telegram.org/bot{}/sendMessage".format(TELEGRAM_BOT_TOKEN)
+            payload = json.dumps({"chat_id": TELEGRAM_CHAT_ID, "text": msg, "parse_mode": "HTML"}).encode()
+            req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+            urllib.request.urlopen(req, timeout=8)
+        except Exception as e:
+            print("  [TG] Send error:", e)
+    threading.Thread(target=_send, daemon=True).start()
 
 DATA_FILE = "data.json"
 PORT = int(os.environ.get("PORT", 8080))
@@ -29,6 +51,10 @@ def make_default():
             "momo_owner": "NGUYEN TRAN CHI CUONG",
             "announcement": "Chao mung den voi Shop Xu Su Kien CFL!",
             "spin_cost": 5000,
+            "auto_topup": False,
+            "telegram_notify_orders": True,
+            "telegram_notify_topups": True,
+            "telegram_notify_support": True,
             "spin_prizes": [
                 {"id":"s1","label":"10,000d","value":10000,"type":"balance","weight":20,"color":"#f5a623"},
                 {"id":"s2","label":"5 Xu","value":5,"type":"xu","weight":25,"color":"#00d4ff"},
@@ -66,7 +92,9 @@ def make_default():
         "spin_history": [],
         "subwebs": [],
         "posts": [],
-        "svc_tabs": []
+        "svc_tabs": [],
+        "coupons": [],
+        "support_requests": []
     }
 
 AVATAR_COLORS = [
@@ -164,6 +192,8 @@ def _ensure_defaults(d):
         if k not in d: d[k] = v
     for k,v in ddef["settings"].items():
         if k not in d["settings"]: d["settings"][k] = v
+    if "coupons" not in d: d["coupons"] = []
+    if "support_requests" not in d: d["support_requests"] = []
 
 # ========== BACKUP ==========
 def do_backup():
@@ -297,9 +327,24 @@ class H(BaseHTTPRequestHandler):
         if p=="/api/topup/request":
             uid=b.get("uid"); amt=int(b.get("amount",0)); method=b.get("method",""); note=b.get("note","")
             if amt<10000: self.sj(400,{"ok":False,"error":"Toi thieu 10,000d"}); return
+            acc_tp=next((a for a in d["accounts"] if a["id"]==uid),None)
+            uname_tp=acc_tp["name"] if acc_tp else uid
             req={"id":"tp"+str(int(time.time()*1000)),"uid":uid,"amount":amt,"method":method,
                  "note":note,"status":"pending","time":datetime.now().strftime("%d/%m/%Y %H:%M")}
-            d["topups"].append(req); save_data(d); self.sj(200,{"ok":True,"topup":req}); return
+            # Auto approve if enabled
+            if d["settings"].get("auto_topup",False):
+                req["status"]="approved"; req["approved_time"]=datetime.now().strftime("%d/%m/%Y %H:%M")
+                if acc_tp: acc_tp["balance"]=acc_tp.get("balance",0)+amt
+            d["topups"].append(req); save_data(d)
+            # Telegram notification
+            if d["settings"].get("telegram_notify_topups",True):
+                auto_tag="✅ AUTO DUYỆT" if req["status"]=="approved" else "⏳ Chờ duyệt"
+                tg_send(f"💳 <b>YÊU CẦU NẠP TIỀN</b> [{auto_tag}]\n"
+                        f"👤 {uname_tp} ({uid})\n"
+                        f"💰 {amt:,}đ | {method}\n"
+                        f"📝 {note}\n"
+                        f"🕐 {req['time']}")
+            self.sj(200,{"ok":True,"topup":req,"new_balance":acc_tp.get("balance",0) if acc_tp else 0}); return
 
         if p=="/api/topup/approve":
             tid=b.get("id")
@@ -320,19 +365,40 @@ class H(BaseHTTPRequestHandler):
 
         if p=="/api/order":
             uid=b.get("uid"); pid=b.get("price_id"); qty=int(b.get("qty",1)); gid=b.get("game_id","")
+            coupon_code=b.get("coupon","").strip().upper()
             acc=next((a for a in d["accounts"] if a["id"]==uid),None)
             price=next((pr for pr in d["prices"] if pr["id"]==pid),None)
             if not acc or not price: self.sj(400,{"ok":False,"error":"Du lieu khong hop le"}); return
             rk=next((r for r in d["ranks"] if r["id"]==acc.get("rank","bronze")),None)
             disc=rk["discount"] if rk else 0
-            total=int(price["price"]*qty*(1-disc/100))
+            # Apply coupon
+            coupon_used=None
+            coupon_disc=0
+            if coupon_code:
+                cp=next((c for c in d.get("coupons",[]) if c["code"]==coupon_code and c["active"]),None)
+                if not cp: self.sj(400,{"ok":False,"error":"Mã giảm giá không hợp lệ hoặc đã hết hạn"}); return
+                if cp.get("uses",0)>=cp.get("max_uses",9999): self.sj(400,{"ok":False,"error":"Mã giảm giá đã dùng hết"}); return
+                coupon_disc=cp["discount"]; coupon_used=cp
+            total_disc=min(disc+coupon_disc,100)
+            total=int(price["price"]*qty*(1-total_disc/100))
             if acc.get("balance",0)<total: self.sj(400,{"ok":False,"error":"So du khong du"}); return
             acc["balance"]-=total; acc["total_spent"]=acc.get("total_spent",0)+total
             acc["rank"]=get_rank(d["ranks"],acc["total_spent"])
+            if coupon_used: coupon_used["uses"]=coupon_used.get("uses",0)+1
             od={"id":"od"+str(int(time.time()*1000)),"uid":uid,"uname":acc["name"],
                 "price_id":pid,"price_name":price["name"],"qty":qty,"total":total,
-                "discount":disc,"game_id":gid,"status":"pending","time":datetime.now().strftime("%d/%m/%Y %H:%M")}
+                "discount":total_disc,"coupon":coupon_code if coupon_code else "","game_id":gid,
+                "status":"pending","time":datetime.now().strftime("%d/%m/%Y %H:%M")}
             d["orders"].append(od); save_data(d)
+            # Telegram
+            if d["settings"].get("telegram_notify_orders",True):
+                cpn_info=f"\n🎫 Coupon: {coupon_code} (-{coupon_disc}%)" if coupon_code else ""
+                tg_send(f"🛒 <b>ĐƠN HÀNG MỚI</b>\n"
+                        f"👤 {acc['name']} ({uid})\n"
+                        f"📦 {price['name']} x{qty}\n"
+                        f"💸 {total:,}đ (giảm {total_disc}%){cpn_info}\n"
+                        f"🎮 ID: {gid}\n"
+                        f"🕐 {od['time']}")
             self.sj(200,{"ok":True,"order":od,"new_balance":acc["balance"],"new_rank":acc["rank"]}); return
 
         if p=="/api/cf_order":
@@ -449,6 +515,48 @@ class H(BaseHTTPRequestHandler):
             d.setdefault("svc_tabs",[]).append(tab); save_data(d)
             self.sj(200,{"ok":True,"tab":tab}); return
 
+        # ===== COUPON ENDPOINTS =====
+        if p=="/api/coupon/check":
+            code=b.get("code","").strip().upper()
+            cp=next((c for c in d.get("coupons",[]) if c["code"]==code and c["active"]),None)
+            if not cp: self.sj(404,{"ok":False,"error":"Mã không hợp lệ"}); return
+            if cp.get("uses",0)>=cp.get("max_uses",9999): self.sj(400,{"ok":False,"error":"Mã đã hết lượt dùng"}); return
+            self.sj(200,{"ok":True,"coupon":cp}); return
+
+        if p=="/api/coupon/create":
+            code=b.get("code","").strip().upper()
+            disc=int(b.get("discount",10)); mx=int(b.get("max_uses",100)); note=b.get("note","")
+            if not code: self.sj(400,{"ok":False,"error":"Thiếu mã"}); return
+            if any(c["code"]==code for c in d.get("coupons",[])):
+                self.sj(400,{"ok":False,"error":"Mã đã tồn tại"}); return
+            cp={"id":"cp"+str(int(time.time()*1000)),"code":code,"discount":disc,
+                "max_uses":mx,"uses":0,"note":note,"active":True,
+                "created":datetime.now().strftime("%d/%m/%Y %H:%M")}
+            d.setdefault("coupons",[]).append(cp); save_data(d)
+            self.sj(200,{"ok":True,"coupon":cp}); return
+
+        if p=="/api/coupon/toggle":
+            cid=b.get("id")
+            for cp in d.get("coupons",[]):
+                if cp["id"]==cid: cp["active"]=not cp.get("active",True); break
+            save_data(d); self.sj(200,{"ok":True}); return
+
+        # ===== SUPPORT REQUEST =====
+        if p=="/api/support/request":
+            uid=b.get("uid",""); msg_text=b.get("message","").strip()
+            if not msg_text: self.sj(400,{"ok":False,"error":"Nhập nội dung yêu cầu"}); return
+            acc_s=next((a for a in d["accounts"] if a["id"]==uid),None)
+            uname_s=acc_s["name"] if acc_s else "Khách"
+            sr={"id":"sr"+str(int(time.time()*1000)),"uid":uid,"uname":uname_s,
+                "message":msg_text,"status":"open","time":datetime.now().strftime("%d/%m/%Y %H:%M")}
+            d.setdefault("support_requests",[]).append(sr); save_data(d)
+            if d["settings"].get("telegram_notify_support",True):
+                tg_send(f"🆘 <b>YÊU CẦU HỖ TRỢ</b>\n"
+                        f"👤 {uname_s} ({uid})\n"
+                        f"💬 {msg_text}\n"
+                        f"🕐 {sr['time']}")
+            self.sj(200,{"ok":True,"sr":sr}); return
+
         self.sj(404,{"error":"not found"})
 
     def do_PUT(self):
@@ -487,6 +595,9 @@ class H(BaseHTTPRequestHandler):
         if p.startswith("/api/svc_tabs/"):
             tid=p.split("/")[-1]; d["svc_tabs"]=[t for t in d.get("svc_tabs",[]) if t["id"]!=tid]
             save_data(d); self.sj(200,{"ok":True}); return
+        if p.startswith("/api/coupon/"):
+            cid=p.split("/")[-1]; d["coupons"]=[c for c in d.get("coupons",[]) if c["id"]!=cid]
+            save_data(d); self.sj(200,{"ok":True}); return
         self.sj(404,{"error":"not found"})
 
 if __name__=="__main__":
@@ -511,6 +622,10 @@ if __name__=="__main__":
     print("  Network: http://{}:{}".format(local_ip,PORT))
     print("  Admin: username=admin  password=admin123")
     print("="*55)
+    if TELEGRAM_BOT_TOKEN:
+        print("  [TG] Telegram Bot: ENABLED (chat_id={})".format(TELEGRAM_CHAT_ID))
+    else:
+        print("  [TG] Telegram Bot: Set TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID to enable")
     try: server.serve_forever()
     except KeyboardInterrupt: print("\nStopped.")
 
