@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""
-Shop Xu Su Kien CFL - Server v3
-- PostgreSQL (Supabase) for persistent storage
-- Falls back to JSON file if no DB configured
-"""
+"""Shop Xu Su Kien CFL - Server v4"""
 import json, os, hashlib, shutil, threading, time, random
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -13,21 +9,20 @@ DATA_FILE = "data.json"
 PORT = int(os.environ.get("PORT", 8080))
 BACKUP_DIR = "backup"
 MAX_BACKUPS = 60
-BACKUP_INTERVAL = 6 * 60 * 60  # backup every 6h
+BACKUP_INTERVAL = 6 * 60 * 60
 
-# ========== DEFAULT DATA ==========
 def make_default():
     return {
         "settings": {
-            "shop_name": "Shop Xu Su Kien CFL",
+            "shop_name": "Shop Liam CFL",
             "zalo": "0964149813",
-            "fb_page": "https://www.facebook.com/NguyenChiCuong.AC9",
+            "fb_page": "https://facebook.com",
             "bank_name": "MB Bank",
             "bank_number": "09090669999",
             "bank_owner": "NGUYEN TRAN CHI CUONG",
             "momo": "0964149813",
             "momo_owner": "NGUYEN TRAN CHI CUONG",
-            "announcement": "Chao mung den voi Shop Xu Su Kien CFL!",
+            "announcement": "Chao mung den voi Shop Xu Su Kien CFL uy tin - nhanh chong!",
             "spin_cost": 5000,
             "spin_prizes": [
                 {"id":"s1","label":"10,000d","value":10000,"type":"balance","weight":20,"color":"#f5a623"},
@@ -38,13 +33,17 @@ def make_default():
                 {"id":"s6","label":"100,000d","value":100000,"type":"balance","weight":2,"color":"#ffd166"},
                 {"id":"s7","label":"20 Xu","value":20,"type":"xu","weight":10,"color":"#ff3366"},
                 {"id":"s8","label":"Thu lai","value":0,"type":"none","weight":15,"color":"#3a3a60"}
-            ]
+            ],
+            "seo_title": "Shop Xu Su Kien CFL - Mua Ban Xu Game Crossfire Legend",
+            "seo_desc": "Shop xu uy tin nhanh chong gia tot. Xu Su Kien, Xu Thuong Crossfire Legend.",
+            "seo_keywords": "xu su kien, xu crossfire, mua xu cfl, shop xu cf",
+            "logo_url": "",
         },
         "ranks": [
-            {"id":"bronze","name":"Khách lẻ","min_spent":0,"color":"#cd7f32","discount":3},
-            {"id":"silver","name":"Cộng Tác Viên","min_spent":200000,"color":"#c0c0c0","discount":10},
-            {"id":"gold","name":"Đại Lí","min_spent":3000000,"color":"#f5a623","discount":20},
-            {"id":"diamond","name":"Tổng Đại lí","min_spent":10000000,"color":"#00d4ff","discount":30}
+            {"id":"bronze","name":"Dong","min_spent":0,"color":"#cd7f32","discount":0},
+            {"id":"silver","name":"Bac","min_spent":500000,"color":"#c0c0c0","discount":3},
+            {"id":"gold","name":"Vang","min_spent":2000000,"color":"#f5a623","discount":5},
+            {"id":"diamond","name":"Kim Cuong","min_spent":5000000,"color":"#00d4ff","discount":10}
         ],
         "accounts": [
             {"id":"admin","username":"admin","name":"Nguyen Chi Cuong",
@@ -61,6 +60,9 @@ def make_default():
             {"id":"cf3","name":"25,000 Xu CF","xu":25000,"price":230000,"bonus":"Bonus 8%","active":True},
             {"id":"cf4","name":"50,000 Xu CF","xu":50000,"price":450000,"bonus":"Bonus 10%","active":True}
         ],
+        "custom_tabs": [],
+        "posts": [],
+        "affiliates": [],
         "topups": [],
         "orders": [],
         "spin_history": []
@@ -72,43 +74,29 @@ AVATAR_COLORS = [
     {"color":"#a855f7","bg":"#0e001a"},{"color":"#06b6d4","bg":"#001519"}
 ]
 
-# ========== POSTGRES SUPPORT ==========
-DB_URL = os.environ.get("DATABASE_URL", "")
+DB_URL = os.environ.get("DATABASE_URL","")
 db_conn = None
 
 def get_db():
     global db_conn
-    if not DB_URL:
-        return None
+    if not DB_URL: return None
     try:
         import psycopg2
         if db_conn is None or db_conn.closed:
             db_conn = psycopg2.connect(DB_URL, sslmode='require')
         return db_conn
     except Exception as e:
-        print("  [DB] Cannot connect:", e)
-        return None
+        print("  [DB] Cannot connect:", e); return None
 
 def db_init():
     conn = get_db()
-    if not conn:
-        return False
+    if not conn: return False
     try:
         cur = conn.cursor()
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS store (
-                key VARCHAR(50) PRIMARY KEY,
-                value TEXT NOT NULL,
-                updated_at TIMESTAMP DEFAULT NOW()
-            )
-        """)
-        conn.commit()
-        cur.close()
-        print("  [DB] PostgreSQL connected and ready!")
-        return True
+        cur.execute("CREATE TABLE IF NOT EXISTS store (key VARCHAR(50) PRIMARY KEY, value TEXT NOT NULL, updated_at TIMESTAMP DEFAULT NOW())")
+        conn.commit(); cur.close(); print("  [DB] PostgreSQL ready!"); return True
     except Exception as e:
-        print("  [DB] Init error:", e)
-        return False
+        print("  [DB] Init error:", e); return False
 
 def load_data():
     conn = get_db()
@@ -116,23 +104,15 @@ def load_data():
         try:
             cur = conn.cursor()
             cur.execute("SELECT value FROM store WHERE key='data'")
-            row = cur.fetchone()
-            cur.close()
+            row = cur.fetchone(); cur.close()
             if row:
-                d = json.loads(row[0])
-                _ensure_defaults(d)
-                return d
+                d = json.loads(row[0]); _ensure(d); return d
         except Exception as e:
             print("  [DB] Load error:", e)
-    # fallback to file
     if not os.path.exists(DATA_FILE):
-        d = make_default()
-        save_data(d)
-        return d
-    with open(DATA_FILE,"r",encoding="utf-8") as f:
-        d = json.load(f)
-    _ensure_defaults(d)
-    return d
+        d = make_default(); save_data(d); return d
+    with open(DATA_FILE,"r",encoding="utf-8") as f: d = json.load(f)
+    _ensure(d); return d
 
 def save_data(data):
     conn = get_db()
@@ -140,33 +120,46 @@ def save_data(data):
     if conn:
         try:
             cur = conn.cursor()
-            cur.execute("""
-                INSERT INTO store (key, value, updated_at)
-                VALUES ('data', %s, NOW())
-                ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, updated_at=NOW()
-            """, (jdata,))
-            conn.commit()
-            cur.close()
+            cur.execute("INSERT INTO store (key,value,updated_at) VALUES ('data',%s,NOW()) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value,updated_at=NOW()",(jdata,))
+            conn.commit(); cur.close()
         except Exception as e:
             print("  [DB] Save error:", e)
             try: conn.rollback()
             except: pass
-    # always save to file as backup
     with open(DATA_FILE,"w",encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-def _ensure_defaults(d):
+def _ensure(d):
     ddef = make_default()
     for k,v in ddef.items():
         if k not in d: d[k] = v
     for k,v in ddef["settings"].items():
         if k not in d["settings"]: d["settings"][k] = v
 
-# ========== BACKUP ==========
+def hash_pw(pw): return hashlib.sha256(pw.encode()).hexdigest()
+def safe_acc(a): return {k:v for k,v in a.items() if k!="pin_hash"}
+
+def get_rank(ranks, total_spent):
+    sranks = sorted(ranks, key=lambda r: r["min_spent"], reverse=True)
+    for r in sranks:
+        if total_spent >= r["min_spent"]: return r["id"]
+    return ranks[0]["id"] if ranks else "bronze"
+
+def top_topup(d):
+    totals = {}
+    for t in d["topups"]:
+        if t.get("status")=="approved":
+            uid = t.get("uid","")
+            totals[uid] = totals.get(uid,0) + t.get("amount",0)
+    accs = {a["id"]: a for a in d["accounts"]}
+    result = [{"name": accs.get(uid,{}).get("name","?"), "total": tot, "rank": accs.get(uid,{}).get("rank","bronze")} for uid,tot in totals.items()]
+    result.sort(key=lambda x: -x["total"])
+    return result[:10]
+
 def do_backup():
     if not os.path.exists(DATA_FILE): return
     os.makedirs(BACKUP_DIR, exist_ok=True)
-    dest = os.path.join(BACKUP_DIR, "data_{}.json".format(datetime.now().strftime("%Y-%m-%d_%H-%M")))
+    dest = os.path.join(BACKUP_DIR,"data_{}.json".format(datetime.now().strftime("%Y-%m-%d_%H-%M")))
     shutil.copy2(DATA_FILE, dest)
     files = sorted([f for f in os.listdir(BACKUP_DIR) if f.endswith(".json")])
     while len(files) > MAX_BACKUPS: os.remove(os.path.join(BACKUP_DIR, files.pop(0)))
@@ -175,16 +168,6 @@ def backup_loop():
     time.sleep(10); do_backup()
     while True: time.sleep(BACKUP_INTERVAL); do_backup()
 
-# ========== HELPERS ==========
-def hash_pw(pw): return hashlib.sha256(pw.encode()).hexdigest()
-def safe_acc(a): return {k:v for k,v in a.items() if k!="pin_hash"}
-def get_rank(ranks, total_spent):
-    sranks = sorted(ranks, key=lambda r: r["min_spent"], reverse=True)
-    for r in sranks:
-        if total_spent >= r["min_spent"]: return r["id"]
-    return ranks[0]["id"] if ranks else "bronze"
-
-# ========== HTTP ==========
 class H(BaseHTTPRequestHandler):
     def log_message(self,*a): pass
 
@@ -229,7 +212,11 @@ class H(BaseHTTPRequestHandler):
             "/api/ranks":        lambda:d["ranks"],
             "/api/cf_packages":  lambda:d.get("cf_packages",[]),
             "/api/spin_history": lambda:d.get("spin_history",[]),
-            "/api/accounts/all": lambda:[safe_acc(a) for a in d["accounts"]]
+            "/api/accounts/all": lambda:[safe_acc(a) for a in d["accounts"]],
+            "/api/custom_tabs":  lambda:d.get("custom_tabs",[]),
+            "/api/posts":        lambda:d.get("posts",[]),
+            "/api/affiliates":   lambda:d.get("affiliates",[]),
+            "/api/top_topup":    lambda:top_topup(d),
         }
         if p in routes: self.sj(200,routes[p]())
         else: self.sj(404,{"error":"not found"})
@@ -251,11 +238,8 @@ class H(BaseHTTPRequestHandler):
             if any(a["username"].lower()==un.lower() for a in d["accounts"]):
                 self.sj(400,{"ok":False,"error":"Ten dang nhap da ton tai"}); return
             idx=len([a for a in d["accounts"] if a["role"]=="user"])
-            st=AVATAR_COLORS[idx%len(AVATAR_COLORS)]
-            na={"id":"u"+str(int(time.time()*1000)),"username":un,"name":name,
-                "pin_hash":hash_pw(pw),"role":"user","balance":0,"total_spent":0,
-                "rank":"bronze","color":st["color"],"bg":st["bg"],
-                "created":datetime.now().strftime("%d/%m/%Y")}
+            st2=AVATAR_COLORS[idx%len(AVATAR_COLORS)]
+            na={"id":"u"+str(int(time.time()*1000)),"username":un,"name":name,"pin_hash":hash_pw(pw),"role":"user","balance":0,"total_spent":0,"rank":"bronze","color":st2["color"],"bg":st2["bg"],"created":datetime.now().strftime("%d/%m/%Y")}
             d["accounts"].append(na); save_data(d)
             self.sj(200,{"ok":True,"account":safe_acc(na)}); return
 
@@ -278,8 +262,7 @@ class H(BaseHTTPRequestHandler):
         if p=="/api/topup/request":
             uid=b.get("uid"); amt=int(b.get("amount",0)); method=b.get("method",""); note=b.get("note","")
             if amt<10000: self.sj(400,{"ok":False,"error":"Toi thieu 10,000d"}); return
-            req={"id":"tp"+str(int(time.time()*1000)),"uid":uid,"amount":amt,"method":method,
-                 "note":note,"status":"pending","time":datetime.now().strftime("%d/%m/%Y %H:%M")}
+            req={"id":"tp"+str(int(time.time()*1000)),"uid":uid,"amount":amt,"method":method,"note":note,"status":"pending","time":datetime.now().strftime("%d/%m/%Y %H:%M")}
             d["topups"].append(req); save_data(d); self.sj(200,{"ok":True,"topup":req}); return
 
         if p=="/api/topup/approve":
@@ -310,9 +293,7 @@ class H(BaseHTTPRequestHandler):
             if acc.get("balance",0)<total: self.sj(400,{"ok":False,"error":"So du khong du"}); return
             acc["balance"]-=total; acc["total_spent"]=acc.get("total_spent",0)+total
             acc["rank"]=get_rank(d["ranks"],acc["total_spent"])
-            od={"id":"od"+str(int(time.time()*1000)),"uid":uid,"uname":acc["name"],
-                "price_id":pid,"price_name":price["name"],"qty":qty,"total":total,
-                "discount":disc,"game_id":gid,"status":"pending","time":datetime.now().strftime("%d/%m/%Y %H:%M")}
+            od={"id":"od"+str(int(time.time()*1000)),"uid":uid,"uname":acc["name"],"price_id":pid,"price_name":price["name"],"qty":qty,"total":total,"discount":disc,"game_id":gid,"status":"pending","time":datetime.now().strftime("%d/%m/%Y %H:%M")}
             d["orders"].append(od); save_data(d)
             self.sj(200,{"ok":True,"order":od,"new_balance":acc["balance"],"new_rank":acc["rank"]}); return
 
@@ -324,9 +305,21 @@ class H(BaseHTTPRequestHandler):
             if acc.get("balance",0)<pkg["price"]: self.sj(400,{"ok":False,"error":"So du khong du"}); return
             acc["balance"]-=pkg["price"]; acc["total_spent"]=acc.get("total_spent",0)+pkg["price"]
             acc["rank"]=get_rank(d["ranks"],acc["total_spent"])
-            od={"id":"cf"+str(int(time.time()*1000)),"uid":uid,"uname":acc["name"],
-                "type":"cf","pkg_name":pkg["name"],"xu":pkg["xu"],"total":pkg["price"],
-                "game_id":gid,"server":sv,"status":"pending","time":datetime.now().strftime("%d/%m/%Y %H:%M")}
+            od={"id":"cf"+str(int(time.time()*1000)),"uid":uid,"uname":acc["name"],"type":"cf","pkg_name":pkg["name"],"xu":pkg["xu"],"total":pkg["price"],"game_id":gid,"server":sv,"status":"pending","time":datetime.now().strftime("%d/%m/%Y %H:%M")}
+            d["orders"].append(od); save_data(d)
+            self.sj(200,{"ok":True,"order":od,"new_balance":acc["balance"]}); return
+
+        if p=="/api/custom_order":
+            uid=b.get("uid"); tab_id=b.get("tab_id"); item_id=b.get("item_id"); gid=b.get("game_id",""); note=b.get("note","")
+            acc=next((a for a in d["accounts"] if a["id"]==uid),None)
+            tab=next((t for t in d.get("custom_tabs",[]) if t["id"]==tab_id),None)
+            item=None
+            if tab: item=next((i for i in tab.get("items",[]) if i["id"]==item_id),None)
+            if not acc or not item: self.sj(400,{"ok":False,"error":"Du lieu khong hop le"}); return
+            if acc.get("balance",0)<item["price"]: self.sj(400,{"ok":False,"error":"So du khong du"}); return
+            acc["balance"]-=item["price"]; acc["total_spent"]=acc.get("total_spent",0)+item["price"]
+            acc["rank"]=get_rank(d["ranks"],acc["total_spent"])
+            od={"id":"ct"+str(int(time.time()*1000)),"uid":uid,"uname":acc["name"],"type":"custom","tab_name":tab.get("name",""),"item_name":item.get("name",""),"total":item["price"],"game_id":gid,"note":note,"status":"pending","time":datetime.now().strftime("%d/%m/%Y %H:%M")}
             d["orders"].append(od); save_data(d)
             self.sj(200,{"ok":True,"order":od,"new_balance":acc["balance"]}); return
 
@@ -359,34 +352,49 @@ class H(BaseHTTPRequestHandler):
             prize=random.choices(prizes,weights=weights,k=1)[0]
             pidx=prizes.index(prize)
             if prize["type"]=="balance": acc["balance"]=acc.get("balance",0)+prize["value"]
-            sh={"id":"sp"+str(int(time.time()*1000)),"uid":uid,"uname":acc["name"],
-                "prize_label":prize["label"],"prize_type":prize["type"],"prize_value":prize["value"],
-                "time":datetime.now().strftime("%d/%m/%Y %H:%M")}
+            sh={"id":"sp"+str(int(time.time()*1000)),"uid":uid,"uname":acc["name"],"prize_label":prize["label"],"prize_type":prize["type"],"prize_value":prize["value"],"time":datetime.now().strftime("%d/%m/%Y %H:%M")}
             if "spin_history" not in d: d["spin_history"]=[]
             d["spin_history"].append(sh); save_data(d)
             self.sj(200,{"ok":True,"prize":prize,"prize_index":pidx,"new_balance":acc["balance"]}); return
 
         if p=="/api/prices":
-            np2={"id":"pr"+str(int(time.time()*1000)),"name":b.get("name",""),
-                 "price":int(b.get("price",0)),"unit":b.get("unit","xu"),"note":b.get("note",""),"active":True}
+            np2={"id":"pr"+str(int(time.time()*1000)),"name":b.get("name",""),"price":int(b.get("price",0)),"unit":b.get("unit","xu"),"note":b.get("note",""),"active":True}
             d["prices"].append(np2); save_data(d); self.sj(200,{"ok":True,"price":np2}); return
 
         if p=="/api/cf_packages":
-            np2={"id":"cfp"+str(int(time.time()*1000)),"name":b.get("name",""),
-                 "xu":int(b.get("xu",0)),"price":int(b.get("price",0)),"bonus":b.get("bonus",""),"active":True}
+            np2={"id":"cfp"+str(int(time.time()*1000)),"name":b.get("name",""),"xu":int(b.get("xu",0)),"price":int(b.get("price",0)),"bonus":b.get("bonus",""),"active":True}
             d["cf_packages"].append(np2); save_data(d); self.sj(200,{"ok":True}); return
+
+        if p=="/api/custom_tabs":
+            tab={"id":"tab"+str(int(time.time()*1000)),"name":b.get("name","Tab moi"),"icon":b.get("icon","⭐"),"desc":b.get("desc",""),"active":True,"items":[]}
+            d["custom_tabs"].append(tab); save_data(d); self.sj(200,{"ok":True,"tab":tab}); return
+
+        if p.startswith("/api/custom_tabs/") and p.endswith("/items"):
+            tid=p.split("/")[3]
+            item={"id":"item"+str(int(time.time()*1000)),"name":b.get("name",""),"price":int(b.get("price",0)),"desc":b.get("desc",""),"active":True}
+            for tab in d["custom_tabs"]:
+                if tab["id"]==tid:
+                    if "items" not in tab: tab["items"]=[]
+                    tab["items"].append(item)
+            save_data(d); self.sj(200,{"ok":True,"item":item}); return
+
+        if p=="/api/posts":
+            post={"id":"post"+str(int(time.time()*1000)),"title":b.get("title",""),"slug":b.get("slug",""),"content":b.get("content",""),"excerpt":b.get("excerpt",""),"image":b.get("image",""),"tags":b.get("tags",""),"published":True,"created":datetime.now().strftime("%d/%m/%Y %H:%M")}
+            d["posts"].append(post); save_data(d); self.sj(200,{"ok":True,"post":post}); return
+
+        if p=="/api/affiliates":
+            aff={"id":"aff"+str(int(time.time()*1000)),"name":b.get("name",""),"username":b.get("username",""),"url":b.get("url",""),"discount":int(b.get("discount",0)),"commission":int(b.get("commission",0)),"active":True,"created":datetime.now().strftime("%d/%m/%Y")}
+            d["affiliates"].append(aff); save_data(d); self.sj(200,{"ok":True,"affiliate":aff}); return
 
         if p=="/api/ranks":
             d["ranks"]=b.get("ranks",d["ranks"]); save_data(d); self.sj(200,{"ok":True}); return
 
         if p=="/api/settings":
-            for k,v in b.items():
-                d["settings"][k]=v
+            for k,v in b.items(): d["settings"][k]=v
             save_data(d); self.sj(200,{"ok":True}); return
 
         if p=="/api/spin_prizes":
-            d["settings"]["spin_prizes"]=b.get("prizes",d["settings"]["spin_prizes"])
-            save_data(d); self.sj(200,{"ok":True}); return
+            d["settings"]["spin_prizes"]=b.get("prizes",d["settings"]["spin_prizes"]); save_data(d); self.sj(200,{"ok":True}); return
 
         if p=="/api/balance/adjust":
             uid=b.get("uid"); amt=int(b.get("amount",0))
@@ -419,39 +427,47 @@ class H(BaseHTTPRequestHandler):
             for pr in d.get("cf_packages",[]):
                 if pr["id"]==pid: pr.update({k:b[k] for k in b if k in pr})
             save_data(d); self.sj(200,{"ok":True}); return
+        if p.startswith("/api/custom_tabs/"):
+            tid=p.split("/")[-1]
+            for tab in d.get("custom_tabs",[]):
+                if tab["id"]==tid: tab.update({k:b[k] for k in b if k in ["name","icon","desc","active"]})
+            save_data(d); self.sj(200,{"ok":True}); return
+        if p.startswith("/api/posts/"):
+            pid=p.split("/")[-1]
+            for post in d.get("posts",[]):
+                if post["id"]==pid: post.update({k:b[k] for k in b if k in post})
+            save_data(d); self.sj(200,{"ok":True}); return
         self.sj(404,{"error":"not found"})
 
     def do_DELETE(self):
         p=urlparse(self.path).path; d=load_data()
         if p.startswith("/api/prices/"):
-            pid=p.split("/")[-1]; d["prices"]=[pr for pr in d["prices"] if pr["id"]!=pid]
-            save_data(d); self.sj(200,{"ok":True}); return
+            pid=p.split("/")[-1]; d["prices"]=[pr for pr in d["prices"] if pr["id"]!=pid]; save_data(d); self.sj(200,{"ok":True}); return
         if p.startswith("/api/cf_packages/"):
-            pid=p.split("/")[-1]; d["cf_packages"]=[pr for pr in d.get("cf_packages",[]) if pr["id"]!=pid]
-            save_data(d); self.sj(200,{"ok":True}); return
+            pid=p.split("/")[-1]; d["cf_packages"]=[pr for pr in d.get("cf_packages",[]) if pr["id"]!=pid]; save_data(d); self.sj(200,{"ok":True}); return
         if p.startswith("/api/accounts/"):
             uid=p.split("/")[-1]
             if uid=="admin": self.sj(400,{"ok":False,"error":"Khong xoa duoc admin"}); return
-            d["accounts"]=[a for a in d["accounts"] if a["id"]!=uid]; save_data(d)
-            self.sj(200,{"ok":True}); return
+            d["accounts"]=[a for a in d["accounts"] if a["id"]!=uid]; save_data(d); self.sj(200,{"ok":True}); return
+        if p.startswith("/api/custom_tabs/"):
+            tid=p.split("/")[-1]; d["custom_tabs"]=[t for t in d.get("custom_tabs",[]) if t["id"]!=tid]; save_data(d); self.sj(200,{"ok":True}); return
+        if p.startswith("/api/posts/"):
+            pid=p.split("/")[-1]; d["posts"]=[pt for pt in d.get("posts",[]) if pt["id"]!=pid]; save_data(d); self.sj(200,{"ok":True}); return
+        if p.startswith("/api/affiliates/"):
+            aid=p.split("/")[-1]; d["affiliates"]=[a for a in d.get("affiliates",[]) if a["id"]!=aid]; save_data(d); self.sj(200,{"ok":True}); return
         self.sj(404,{"error":"not found"})
 
 if __name__=="__main__":
     import socket
     try: local_ip=socket.gethostbyname(socket.gethostname())
     except: local_ip="127.0.0.1"
-
     print("="*55)
-    print("  SHOP XU CFL - SERVER v3.0")
+    print("  SHOP XU CFL - SERVER v4.0")
     print("="*55)
-
     if DB_URL:
-        print("  [DB] Connecting to PostgreSQL...")
-        db_init()
+        print("  [DB] Connecting to PostgreSQL..."); db_init()
     else:
-        print("  [DB] No DATABASE_URL — using local file")
-        print("  [DB] Set DATABASE_URL env var for persistent storage")
-
+        print("  [DB] No DATABASE_URL - using local file")
     threading.Thread(target=backup_loop,daemon=True).start()
     server=HTTPServer(("0.0.0.0",PORT),H)
     print("  Local  : http://localhost:{}".format(PORT))
