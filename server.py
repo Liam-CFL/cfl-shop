@@ -1,4 +1,4 @@
-o#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Shop Xu Su Kien CFL - Server v4
 - PostgreSQL (Supabase) for persistent storage
@@ -14,8 +14,8 @@ from urllib.parse import urlparse
 import urllib.request, urllib.parse as uparse
 
 # ========== TELEGRAM BOT ==========
-TELEGRAM_BOT_TOKEN = os.environ.get("7654400767:AAEAn3XScjjcavAWnu9g-lG0Q6VBMyF1OQM", "")
-TELEGRAM_CHAT_ID   = os.environ.get("111607320", "")
+TELEGRAM_BOT_TOKEN = os.environ.get("8704649501:AAGcuyEmxYX1Yj7qID2LXyNGbslWu4L6YrI", "")
+TELEGRAM_CHAT_ID   = os.environ.get("8764905112", "")
 
 def tg_send(msg):
     """Send a message to Telegram (non-blocking)."""
