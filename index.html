@@ -675,86 +675,99 @@ select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xm
     <div id="topup" class="page">
       <div class="ph">
         <div class="pt">💳 NẠP TIỀN <div class="ptl"></div></div>
-        <div class="ps">Quét QR hoặc chuyển khoản · Ghi đúng nội dung để duyệt nhanh</div>
+        <div class="ps">Chuyển khoản theo thông tin bên dưới · Admin duyệt qua Telegram</div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem" class="tc2">
-        <!-- Bank -->
-        <div class="bcard">
-          <div style="font-size:26px;margin-bottom:.4rem">🏦</div>
-          <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--cyan)" id="tBk">MB Bank</div>
-          <div class="bnum" id="tBkNum">—</div>
-          <div class="bown" id="tBkOwn">—</div>
-          <div style="margin-top:.875rem">
-            <div style="font-size:11px;color:var(--tx2);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Nội dung chuyển khoản</div>
-            <div id="tCK" style="font-size:15px;font-weight:700;color:var(--cyan);background:var(--cg2);border:1px solid rgba(0,212,255,.2);border-radius:6px;padding:8px 12px;word-break:break-all">—</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
-              <button class="cpbtn" onclick="cpTopup()">📋 Copy nội dung</button>
-              <button class="cpbtn" onclick="cpTxt(document.getElementById('tBkNum').textContent)">📋 Copy số TK</button>
-            </div>
-          </div>
-        </div>
-        <!-- QR Bank -->
-        <div class="bcard" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem">
-          <div style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--tx2);letter-spacing:1px;text-transform:uppercase">QR Ngân hàng</div>
-          <div style="background:#fff;border-radius:14px;padding:10px;width:168px;height:168px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(0,212,255,.2)">
-            <img id="qrBank" src="" alt="QR Bank" style="width:148px;height:148px;border-radius:6px">
-          </div>
-          <div style="font-size:11px;color:var(--tx2);text-align:center;line-height:1.6">Quét bằng app ngân hàng<br><span style="color:var(--gold)">tích hợp sẵn nội dung CK</span></div>
-        </div>
-      </div>
-      <!-- MoMo -->
-      <div id="momoBox" style="display:none;margin-bottom:1rem">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem" class="tc2">
-          <div class="bcard" style="border-top-color:rgba(174,42,225,.5)">
-            <div style="font-size:26px;margin-bottom:.4rem">📱</div>
-            <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:#ae2ae1">MoMo</div>
-            <div class="bnum" id="tMomoNum">—</div>
-            <div class="bown" id="tMomoOwn">—</div>
-            <div style="margin-top:.75rem">
-              <div style="font-size:11px;color:var(--tx2);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Nội dung CK</div>
-              <div id="tMomoCK" style="font-size:14px;font-weight:700;color:#ae2ae1;background:rgba(174,42,225,.08);border:1px solid rgba(174,42,225,.2);border-radius:6px;padding:8px 12px">—</div>
-              <div style="display:flex;gap:6px;margin-top:8px">
-                <button class="cpbtn" style="background:rgba(174,42,225,.1);color:#ae2ae1;border-color:rgba(174,42,225,.3)" onclick="cpTxt(document.getElementById('tMomoNum').textContent)">📋 Copy SĐT</button>
-                <button class="cpbtn" style="background:rgba(174,42,225,.1);color:#ae2ae1;border-color:rgba(174,42,225,.3)" onclick="cpTxt(document.getElementById('tMomoCK').textContent)">📋 Copy ND</button>
-              </div>
-            </div>
-          </div>
-          <div class="bcard" style="border-top-color:rgba(174,42,225,.5);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem">
-            <div style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--tx2);letter-spacing:1px;text-transform:uppercase">QR MoMo</div>
-            <div style="background:#fff;border-radius:14px;padding:10px;width:168px;height:168px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(174,42,225,.2)">
-              <img id="qrMomo" src="" alt="QR MoMo" style="width:148px;height:148px;border-radius:6px">
-            </div>
-            <div style="font-size:11px;color:#ae2ae1;text-align:center">Quét MoMo</div>
-          </div>
-        </div>
-      </div>
-      <div class="card" style="border-color:rgba(245,166,35,.15)">
-        <div style="font-size:13px;color:var(--tx2);line-height:2">
-          ⚡ <strong style="color:var(--gold)">Nội dung CK = shop + username của bạn</strong><br>
-          ⏱ Xử lý trong <strong style="color:var(--tx)">5–15 phút</strong> trong giờ làm việc<br>
-          💬 Cần hỗ trợ? Bấm nút chat bên dưới góc phải
-        </div>
-      </div>
-      <!-- TOPUP REQUEST FORM -->
-      <div class="card card-c" style="margin-top:1rem;border-color:rgba(0,212,255,.25)">
-        <div class="ct" style="font-size:15px;color:var(--cyan)">📩 XÁC NHẬN ĐÃ CHUYỂN KHOẢN <div class="ctl"></div></div>
-        <div style="font-size:13px;color:var(--tx2);margin-bottom:1rem;line-height:1.7">
-          Sau khi chuyển khoản, hãy điền form bên dưới để admin duyệt nhanh hơn.<br>
-          <span style="color:var(--gold)">Ghi đúng nội dung CK để được duyệt tự động nếu bật tính năng auto.</span>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px" class="tc2">
-          <div class="fg"><label>Số tiền đã chuyển (đ)</label>
-            <input class="fi" id="topupAmt" type="number" placeholder="100000" min="10000" step="10000"></div>
+
+      <!-- BƯỚC 1: Chọn số tiền & phương thức -->
+      <div class="card card-c" style="margin-bottom:1rem;border-color:rgba(0,212,255,.3)">
+        <div class="ct" style="font-size:15px;color:var(--cyan)">💰 BƯỚC 1 — NHẬP SỐ TIỀN <div class="ctl"></div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.75rem" class="tc2">
+          <div class="fg"><label>Số tiền muốn nạp (đ)</label>
+            <input class="fi" id="topupAmt" type="number" placeholder="100000" min="10000" step="10000" oninput="onTopupAmtChange()"></div>
           <div class="fg"><label>Phương thức</label>
-            <select class="fi" id="topupMethod">
+            <select class="fi" id="topupMethod" onchange="onTopupMethodChange()">
               <option value="Ngân hàng">🏦 Ngân hàng</option>
               <option value="MoMo">📱 MoMo</option>
             </select></div>
         </div>
-        <div class="fg"><label>Ghi chú thêm (không bắt buộc)</label>
-          <input class="fi" id="topupNote" placeholder="VD: Đã CK lúc 14:30..."></div>
-        <div id="topupReqErr" style="font-size:12px;color:var(--red);min-height:16px;margin-bottom:8px"></div>
-        <button class="btn btn-cyan btn-full gsw" onclick="submitTopupReq()" id="topupReqBtn">📩 GỬI XÁC NHẬN CHUYỂN KHOẢN</button>
+        <div id="topupPreview" style="font-size:13px;color:var(--tx2)">👆 Nhập số tiền để xem QR và thông tin chuyển khoản</div>
+      </div>
+
+      <!-- BƯỚC 2: Thông tin CK (hiện sau khi nhập số tiền) -->
+      <div id="topupInfoBox" style="display:none">
+        <!-- Ngân hàng -->
+        <div id="bankBox2" style="margin-bottom:1rem">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem" class="tc2">
+            <div class="bcard">
+              <div style="font-size:26px;margin-bottom:.4rem">🏦</div>
+              <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--cyan)" id="tBk2">MB Bank</div>
+              <div class="bnum" id="tBkNum2">—</div>
+              <div class="bown" id="tBkOwn2">—</div>
+              <div style="margin-top:.875rem">
+                <div style="font-size:11px;color:var(--tx2);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Nội dung chuyển khoản</div>
+                <div id="tCK2" style="font-size:15px;font-weight:700;color:var(--cyan);background:var(--cg2);border:1px solid rgba(0,212,255,.2);border-radius:6px;padding:8px 12px;word-break:break-all">—</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+                  <button class="cpbtn" onclick="cpTxt(document.getElementById('tCK2').textContent)">📋 Copy ND CK</button>
+                  <button class="cpbtn" onclick="cpTxt(document.getElementById('tBkNum2').textContent)">📋 Copy số TK</button>
+                </div>
+              </div>
+            </div>
+            <div class="bcard" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem">
+              <div style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--tx2);letter-spacing:1px;text-transform:uppercase">QR Ngân hàng</div>
+              <div style="background:#fff;border-radius:14px;padding:10px;width:168px;height:168px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(0,212,255,.2)">
+                <img id="qrBank2" src="" alt="QR" style="width:148px;height:148px;border-radius:6px">
+              </div>
+              <div style="font-size:11px;color:var(--tx2);text-align:center">Quét QR để CK đúng nội dung</div>
+            </div>
+          </div>
+        </div>
+        <!-- MoMo -->
+        <div id="momoBox2" style="display:none;margin-bottom:1rem">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem" class="tc2">
+            <div class="bcard" style="border-top-color:rgba(174,42,225,.5)">
+              <div style="font-size:26px;margin-bottom:.4rem">📱</div>
+              <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:#ae2ae1">MoMo</div>
+              <div class="bnum" id="tMomoNum2">—</div>
+              <div class="bown" id="tMomoOwn2">—</div>
+              <div style="margin-top:.75rem">
+                <div style="font-size:11px;color:var(--tx2);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Nội dung CK</div>
+                <div id="tMomoCK2" style="font-size:14px;font-weight:700;color:#ae2ae1;background:rgba(174,42,225,.08);border:1px solid rgba(174,42,225,.2);border-radius:6px;padding:8px 12px">—</div>
+                <div style="display:flex;gap:6px;margin-top:8px">
+                  <button class="cpbtn" style="background:rgba(174,42,225,.1);color:#ae2ae1;border-color:rgba(174,42,225,.3)" onclick="cpTxt(document.getElementById('tMomoNum2').textContent)">📋 Copy SĐT</button>
+                  <button class="cpbtn" style="background:rgba(174,42,225,.1);color:#ae2ae1;border-color:rgba(174,42,225,.3)" onclick="cpTxt(document.getElementById('tMomoCK2').textContent)">📋 Copy ND</button>
+                </div>
+              </div>
+            </div>
+            <div class="bcard" style="border-top-color:rgba(174,42,225,.5);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem">
+              <div style="background:#fff;border-radius:14px;padding:10px;width:168px;height:168px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(174,42,225,.2)">
+                <img id="qrMomo2" src="" alt="QR MoMo" style="width:148px;height:148px;border-radius:6px">
+              </div>
+              <div style="font-size:11px;color:#ae2ae1;text-align:center">Quét MoMo</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thông báo quan trọng -->
+        <div class="card" style="border-color:rgba(245,166,35,.2);margin-bottom:1rem">
+          <div style="font-size:13px;color:var(--tx2);line-height:2">
+            ⚡ <strong style="color:var(--gold)">Nội dung CK = tên đăng nhập của bạn</strong><br>
+            🔔 Admin duyệt qua <strong style="color:var(--cyan)">Telegram</strong> · Thường trong 5–15 phút<br>
+            ⏰ Thời gian hiện tại: <strong id="topupClock" style="color:var(--green)">—</strong>
+          </div>
+        </div>
+
+        <!-- BƯỚC 3: Xác nhận -->
+        <div class="card card-g" style="border-color:rgba(0,255,136,.2)">
+          <div class="ct" style="font-size:15px;color:var(--green)">✅ BƯỚC 2 — XÁC NHẬN ĐÃ CHUYỂN <div class="ctl"></div></div>
+          <div style="font-size:13px;color:var(--tx2);margin-bottom:1rem;line-height:1.7">
+            Sau khi chuyển khoản xong, bấm nút bên dưới để thông báo admin.<br>
+            <span style="color:var(--gold)">Ghi đúng nội dung CK để admin duyệt nhanh hơn!</span>
+          </div>
+          <div class="fg"><label>Ghi chú thêm (không bắt buộc)</label>
+            <input class="fi" id="topupNote" placeholder="VD: Đã CK lúc 14:30, ref CKSH123..."></div>
+          <div id="topupReqErr" style="font-size:12px;color:var(--red);min-height:16px;margin-bottom:8px"></div>
+          <button class="btn btn-green btn-full gsw" onclick="submitTopupReq()" id="topupReqBtn">📩 ĐÃ CHUYỂN KHOẢN — THÔNG BÁO ADMIN</button>
+        </div>
       </div>
     </div>
 
@@ -1587,29 +1600,54 @@ async function loadSpinHist(){
 }
 
 // ===== TOPUP =====
+let topupClockInt = null;
 function renderTopup(){
-  document.getElementById('tBk').textContent=st.bank_name||'MB Bank';
-  document.getElementById('tBkNum').textContent=st.bank_number||'—';
-  document.getElementById('tBkOwn').textContent=st.bank_owner||'—';
-  const ck=`shop${me?.username||'user'}`;
-  document.getElementById('tCK').textContent=ck;
-  // QR bank
+  // Điền sẵn thông tin vào các trường (dùng khi user nhập số tiền)
+  // Không hiển thị QR ngay — chờ user nhập số tiền
+  document.getElementById('topupInfoBox').style.display = 'none';
+  document.getElementById('topupPreview').textContent = '👆 Nhập số tiền để xem QR và thông tin chuyển khoản';
+  // Start clock
+  if(topupClockInt) clearInterval(topupClockInt);
+  function tick(){ const n=new Date(); document.getElementById('topupClock').textContent=n.toLocaleTimeString('vi-VN'); }
+  tick(); topupClockInt=setInterval(tick,1000);
+}
+function onTopupAmtChange(){
+  const amt=parseInt(document.getElementById('topupAmt').value)||0;
+  if(amt>=10000){ renderTopupInfo(amt); }
+  else{ document.getElementById('topupInfoBox').style.display='none'; document.getElementById('topupPreview').textContent='👆 Nhập số tiền tối thiểu 10,000đ'; }
+}
+function onTopupMethodChange(){
+  const amt=parseInt(document.getElementById('topupAmt').value)||0;
+  if(amt>=10000) renderTopupInfo(amt);
+}
+function renderTopupInfo(amt){
+  const method=document.getElementById('topupMethod').value;
+  document.getElementById('topupInfoBox').style.display='';
+  document.getElementById('topupPreview').textContent='';
+  const ck = me?.username || 'user';
+  // Bank
+  const bkBox=document.getElementById('bankBox2');
+  const mmBox=document.getElementById('momoBox2');
+  if(method==='MoMo'&&st.momo){ bkBox.style.display='none'; mmBox.style.display=''; }
+  else { bkBox.style.display=''; mmBox.style.display='none'; }
+  // Fill bank
+  document.getElementById('tBk2').textContent=st.bank_name||'MB Bank';
+  document.getElementById('tBkNum2').textContent=st.bank_number||'—';
+  document.getElementById('tBkOwn2').textContent=st.bank_owner||'—';
+  document.getElementById('tCK2').textContent=ck;
   const bankMap={'MB Bank':'MB','Vietcombank':'VCB','Techcombank':'TCB','BIDV':'BIDV','Agribank':'AGRIBANK','VPBank':'VPBANK','ACB':'ACB','TPBank':'TPBANK','Sacombank':'STB'};
   const bk=Object.entries(bankMap).find(([k])=>(st.bank_name||'').includes(k))?.[1]||'MB';
   const accN=(st.bank_number||'').replace(/\s/g,'');
-  document.getElementById('qrBank').src=`https://img.vietqr.io/image/${bk}-${accN}-compact2.png?amount=0&addInfo=${encodeURIComponent(ck)}&accountName=${encodeURIComponent(st.bank_owner||'')}`;
+  document.getElementById('qrBank2').src=`https://img.vietqr.io/image/${bk}-${accN}-compact2.png?amount=${amt}&addInfo=${encodeURIComponent(ck)}&accountName=${encodeURIComponent(st.bank_owner||'')}`;
   // MoMo
-  const mbox=document.getElementById('momoBox');
   if(st.momo){
-    mbox.style.display='';
-    document.getElementById('tMomoNum').textContent=st.momo;
-    document.getElementById('tMomoOwn').textContent=st.momo_owner||st.bank_owner||'—';
-    document.getElementById('tMomoCK').textContent=ck;
-    // QR MoMo - dùng VietQR với bank code MOMO
-    document.getElementById('qrMomo').src=`https://img.vietqr.io/image/MOMO-${st.momo}-compact2.png?amount=0&addInfo=${encodeURIComponent(ck)}&accountName=${encodeURIComponent(st.momo_owner||st.bank_owner||'')}`;
-  }else mbox.style.display='none';
+    document.getElementById('tMomoNum2').textContent=st.momo;
+    document.getElementById('tMomoOwn2').textContent=st.momo_owner||st.bank_owner||'—';
+    document.getElementById('tMomoCK2').textContent=ck;
+    document.getElementById('qrMomo2').src=`https://img.vietqr.io/image/MOMO-${st.momo}-compact2.png?amount=${amt}&addInfo=${encodeURIComponent(ck)}&accountName=${encodeURIComponent(st.momo_owner||st.bank_owner||'')}`;
+  }
 }
-function cpTopup(){cpTxt(document.getElementById('tCK').textContent)}
+function cpTopup(){cpTxt(document.getElementById('tCK2').textContent)}
 function cpTxt(t){navigator.clipboard.writeText(t).then(()=>toast('✅ Đã copy!')).catch(()=>{
   const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('✅ Đã copy!');
 })}
@@ -2254,18 +2292,25 @@ async function submitTopupReq() {
   btn.disabled = true; btn.innerHTML = '<span class="spin-ic"></span> Đang gửi...';
   errEl.textContent = '';
   try {
-    const r = await api.post('/api/topup/request', { uid: me.id, amount: amt, method, note: note || ('shop' + me.username) });
+    // Nội dung CK = username (để admin khớp lệnh CK)
+    const ck = me?.username || 'user';
+    const r = await api.post('/api/topup/request', {
+      uid: me.id, amount: amt, method,
+      note: note || ck
+    });
     if (r.ok) {
-      me.balance = r.new_balance || me.balance; updBal();
-      toast('✅ Đã gửi xác nhận! Admin sẽ duyệt sớm.');
+      // KHÔNG cập nhật balance — chờ admin duyệt qua Telegram
+      toast('✅ Đã gửi! Admin sẽ duyệt qua Telegram sớm.', 'info');
       document.getElementById('topupAmt').value = '';
       document.getElementById('topupNote').value = '';
-      setTimeout(() => go('history'), 600);
+      document.getElementById('topupInfoBox').style.display = 'none';
+      document.getElementById('topupPreview').textContent = '👆 Nhập số tiền để xem QR và thông tin chuyển khoản';
+      setTimeout(() => go('history'), 1000);
     } else {
       errEl.textContent = r.error || 'Lỗi gửi yêu cầu';
     }
   } catch(e) { errEl.textContent = 'Không kết nối được server'; }
-  btn.disabled = false; btn.innerHTML = '📩 GỬI XÁC NHẬN CHUYỂN KHOẢN';
+  btn.disabled = false; btn.innerHTML = '📩 ĐÃ CHUYỂN KHOẢN — THÔNG BÁO ADMIN';
 }
 
 // ===== START =====
@@ -2275,5 +2320,18 @@ initBg();
   if(await tryAutoLogin())await initApp();
 })();
 </script>
+<!-- COPYRIGHT FOOTER -->
+<div style="text-align:center;padding:1.5rem 1rem 5rem;font-size:12px;color:var(--tx3);position:relative;z-index:1">
+  <div style="margin-bottom:4px">
+    <span style="color:var(--tx2)">© 2025</span>
+    <span style="background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:700;font-family:'Rajdhani',sans-serif;letter-spacing:1px"> SHOP XU SỰ KIỆN CFL</span>
+  </div>
+  <div style="letter-spacing:.5px">
+    Designed &amp; Developed by
+    <strong style="color:var(--gold)">Nguyễn Chí Cường</strong>
+    <span style="color:var(--cyan)">(Liam CFL)</span>
+  </div>
+</div>
+
 </body>
 </html>
