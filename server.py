@@ -14,8 +14,8 @@ from urllib.parse import urlparse
 import urllib.request, urllib.parse as uparse
 
 # ========== TELEGRAM BOT ==========
-TELEGRAM_BOT_TOKEN = os.environ.get("8704649501:AAGcuyEmxYX1Yj7qID2LXyNGbslWu4L6YrI", "")
-TELEGRAM_CHAT_ID   = os.environ.get("8764905112", "")
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "8704649501:AAGcuyEmxYX1Yj7qID2LXyNGbslWu4L6YrI")
+TELEGRAM_CHAT_ID   = os.environ.get("TELEGRAM_CHAT_ID", "8764905112")
 
 def tg_send(msg):
     """Send a message to Telegram (non-blocking)."""
@@ -276,9 +276,11 @@ class H(BaseHTTPRequestHandler):
             "/api/cf_packages":  lambda:d.get("cf_packages",[]),
             "/api/spin_history": lambda:d.get("spin_history",[]),
             "/api/accounts/all": lambda:[safe_acc(a) for a in d["accounts"]],
-            "/api/subwebs":      lambda:d.get("subwebs",[]),
-            "/api/posts":        lambda:d.get("posts",[]),
-            "/api/svc_tabs":     lambda:d.get("svc_tabs",[]),
+            "/api/subwebs":          lambda:d.get("subwebs",[]),
+            "/api/posts":            lambda:d.get("posts",[]),
+            "/api/svc_tabs":         lambda:d.get("svc_tabs",[]),
+            "/api/coupons":          lambda:d.get("coupons",[]),
+            "/api/support_requests": lambda:d.get("support_requests",[]),
         }
         if p in routes: self.sj(200,routes[p]())
         else: self.sj(404,{"error":"not found"})
@@ -403,16 +405,35 @@ class H(BaseHTTPRequestHandler):
 
         if p=="/api/cf_order":
             uid=b.get("uid"); pkid=b.get("pkg_id"); gid=b.get("game_id",""); sv=b.get("server","")
+            coupon_code=b.get("coupon","").strip().upper()
             acc=next((a for a in d["accounts"] if a["id"]==uid),None)
             pkg=next((pk for pk in d.get("cf_packages",[]) if pk["id"]==pkid),None)
             if not acc or not pkg: self.sj(400,{"ok":False,"error":"Du lieu khong hop le"}); return
-            if acc.get("balance",0)<pkg["price"]: self.sj(400,{"ok":False,"error":"So du khong du"}); return
-            acc["balance"]-=pkg["price"]; acc["total_spent"]=acc.get("total_spent",0)+pkg["price"]
+            # Apply coupon
+            coupon_used=None; coupon_disc=0
+            if coupon_code:
+                cp=next((c for c in d.get("coupons",[]) if c["code"]==coupon_code and c["active"]),None)
+                if not cp: self.sj(400,{"ok":False,"error":"Mã giảm giá không hợp lệ"}); return
+                if cp.get("uses",0)>=cp.get("max_uses",9999): self.sj(400,{"ok":False,"error":"Mã giảm giá đã hết lượt"}); return
+                coupon_disc=cp["discount"]; coupon_used=cp
+            total=int(pkg["price"]*(1-coupon_disc/100))
+            if acc.get("balance",0)<total: self.sj(400,{"ok":False,"error":"So du khong du"}); return
+            acc["balance"]-=total; acc["total_spent"]=acc.get("total_spent",0)+total
             acc["rank"]=get_rank(d["ranks"],acc["total_spent"])
+            if coupon_used: coupon_used["uses"]=coupon_used.get("uses",0)+1
             od={"id":"cf"+str(int(time.time()*1000)),"uid":uid,"uname":acc["name"],
-                "type":"cf","pkg_name":pkg["name"],"xu":pkg["xu"],"total":pkg["price"],
-                "game_id":gid,"server":sv,"status":"pending","time":datetime.now().strftime("%d/%m/%Y %H:%M")}
+                "type":"cf","pkg_name":pkg["name"],"xu":pkg["xu"],"total":total,
+                "game_id":gid,"server":sv,"coupon":coupon_code,"status":"pending","time":datetime.now().strftime("%d/%m/%Y %H:%M")}
             d["orders"].append(od); save_data(d)
+            # Telegram
+            if d["settings"].get("telegram_notify_orders",True):
+                cpn_info=f"\n🎫 Coupon: {coupon_code} (-{coupon_disc}%)" if coupon_code else ""
+                tg_send(f"🎮 <b>ĐƠN NẠP CF MỚI</b>\n"
+                        f"👤 {acc['name']} ({uid})\n"
+                        f"📦 {pkg['name']}\n"
+                        f"💸 {total:,}đ{cpn_info}\n"
+                        f"🎮 ID: {gid}\n"
+                        f"🕐 {od['time']}")
             self.sj(200,{"ok":True,"order":od,"new_balance":acc["balance"]}); return
 
         if p=="/api/order/complete":
