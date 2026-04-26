@@ -31,6 +31,114 @@ def tg_send(msg):
             print("  [TG] Send error:", e)
     threading.Thread(target=_send, daemon=True).start()
 
+def tg_send_topup(msg, topup_id):
+    """Gửi thông báo nạp tiền kèm nút Duyệt / Từ chối inline."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return
+    def _send():
+        try:
+            url = "https://api.telegram.org/bot{}/sendMessage".format(TELEGRAM_BOT_TOKEN)
+            keyboard = {"inline_keyboard": [[
+                {"text": "✅ Duyệt nạp", "callback_data": "approve_top:{}".format(topup_id)},
+                {"text": "❌ Từ chối",   "callback_data": "reject_top:{}".format(topup_id)}
+            ]]}
+            payload = json.dumps({
+                "chat_id": TELEGRAM_CHAT_ID, "text": msg,
+                "parse_mode": "HTML", "reply_markup": keyboard
+            }).encode()
+            req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+            urllib.request.urlopen(req, timeout=8)
+        except Exception as e:
+            print("  [TG] Send topup error:", e)
+    threading.Thread(target=_send, daemon=True).start()
+
+def tg_answer_callback(cbq_id, text):
+    try:
+        url = "https://api.telegram.org/bot{}/answerCallbackQuery".format(TELEGRAM_BOT_TOKEN)
+        payload = json.dumps({"callback_query_id": cbq_id, "text": text, "show_alert": False}).encode()
+        req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+        urllib.request.urlopen(req, timeout=8)
+    except: pass
+
+def tg_remove_keyboard(chat_id, msg_id):
+    try:
+        url = "https://api.telegram.org/bot{}/editMessageReplyMarkup".format(TELEGRAM_BOT_TOKEN)
+        payload = json.dumps({"chat_id": chat_id, "message_id": msg_id,
+                               "reply_markup": {"inline_keyboard": []}}).encode()
+        req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+        urllib.request.urlopen(req, timeout=8)
+    except: pass
+
+def handle_tg_callback(cbq):
+    """Xử lý callback khi admin bấm nút Duyệt/Từ chối trong Telegram."""
+    data_str = cbq.get("data", "")
+    cbq_id   = cbq.get("id", "")
+    msg_obj  = cbq.get("message", {})
+    chat_id  = msg_obj.get("chat", {}).get("id")
+    msg_id   = msg_obj.get("message_id")
+    try:
+        action, tid = data_str.split(":", 1)
+    except:
+        return
+    d = load_data()
+    tp = next((t for t in d["topups"] if t["id"] == tid), None)
+    if action == "approve_top":
+        if tp and tp["status"] == "pending":
+            tp["status"] = "approved"
+            tp["approved_time"] = datetime.now().strftime("%d/%m/%Y %H:%M")
+            for acc in d["accounts"]:
+                if acc["id"] == tp["uid"]:
+                    acc["balance"] = acc.get("balance", 0) + tp["amount"]
+            save_data(d)
+            answer = "✅ Đã duyệt {:,}đ!".format(tp["amount"])
+            tg_send("✅ <b>ĐÃ DUYỆT NẠP TIỀN</b>\n"
+                    "👤 {}\n💰 {:,}đ\n🕐 {}".format(tp.get("uid",""), tp["amount"],
+                    tp["approved_time"]))
+        elif tp and tp["status"] == "approved":
+            answer = "⚠️ Đã duyệt rồi!"
+        else:
+            answer = "❌ Không tìm thấy yêu cầu"
+    elif action == "reject_top":
+        if tp and tp["status"] == "pending":
+            tp["status"] = "rejected"
+            save_data(d)
+            answer = "❌ Đã từ chối yêu cầu"
+        elif tp:
+            answer = "⚠️ Không thể từ chối (trạng thái: {})".format(tp["status"])
+        else:
+            answer = "❌ Không tìm thấy"
+    else:
+        answer = "Unknown action"
+    tg_answer_callback(cbq_id, answer)
+    if chat_id and msg_id:
+        tg_remove_keyboard(chat_id, msg_id)
+
+def tg_poll_loop():
+    """Background thread: long-poll Telegram getUpdates để nhận callback_query."""
+    if not TELEGRAM_BOT_TOKEN:
+        return
+    offset = 0
+    print("  [TG POLL] Bắt đầu lắng nghe callback từ Telegram...")
+    while True:
+        try:
+            url = "https://api.telegram.org/bot{}/getUpdates".format(TELEGRAM_BOT_TOKEN)
+            payload = json.dumps({
+                "offset": offset, "timeout": 25,
+                "allowed_updates": ["callback_query"]
+            }).encode()
+            req = urllib.request.Request(url, data=payload,
+                                         headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=35) as resp:
+                data = json.loads(resp.read())
+            if data.get("ok"):
+                for upd in data.get("result", []):
+                    offset = upd["update_id"] + 1
+                    if "callback_query" in upd:
+                        handle_tg_callback(upd["callback_query"])
+        except Exception as e:
+            print("  [TG POLL] Error:", e)
+            time.sleep(5)
+
 DATA_FILE = "data.json"
 PORT = int(os.environ.get("PORT", 8080))
 BACKUP_DIR = "backup"
@@ -327,26 +435,29 @@ class H(BaseHTTPRequestHandler):
             self.sj(404,{"ok":False}); return
 
         if p=="/api/topup/request":
-            uid=b.get("uid"); amt=int(b.get("amount",0)); method=b.get("method",""); note=b.get("note","")
+            uid=b.get("uid"); amt=int(b.get("amount",0)); method=b.get("method","Ngan hang"); note=b.get("note","")
             if amt<10000: self.sj(400,{"ok":False,"error":"Toi thieu 10,000d"}); return
             acc_tp=next((a for a in d["accounts"] if a["id"]==uid),None)
             uname_tp=acc_tp["name"] if acc_tp else uid
-            req={"id":"tp"+str(int(time.time()*1000)),"uid":uid,"amount":amt,"method":method,
+            req={"id":"tp"+str(int(time.time()*1000)),"uid":uid,"uname":uname_tp,"amount":amt,"method":method,
                  "note":note,"status":"pending","time":datetime.now().strftime("%d/%m/%Y %H:%M")}
-            # Auto approve if enabled
-            if d["settings"].get("auto_topup",False):
-                req["status"]="approved"; req["approved_time"]=datetime.now().strftime("%d/%m/%Y %H:%M")
-                if acc_tp: acc_tp["balance"]=acc_tp.get("balance",0)+amt
+            # LUON de pending - admin duyet qua Telegram inline button
             d["topups"].append(req); save_data(d)
-            # Telegram notification
+            # Telegram notification voi nut Duyet / Tu choi
             if d["settings"].get("telegram_notify_topups",True):
-                auto_tag="✅ AUTO DUYỆT" if req["status"]=="approved" else "⏳ Chờ duyệt"
-                tg_send(f"💳 <b>YÊU CẦU NẠP TIỀN</b> [{auto_tag}]\n"
-                        f"👤 {uname_tp} ({uid})\n"
-                        f"💰 {amt:,}đ | {method}\n"
-                        f"📝 {note}\n"
-                        f"🕐 {req['time']}")
-            self.sj(200,{"ok":True,"topup":req,"new_balance":acc_tp.get("balance",0) if acc_tp else 0}); return
+                tg_send_topup(
+                    "\U0001f4b3 <b>YEU CAU NAP TIEN</b> \u23f3\n"
+                    "\U0001f464 {} (@{})\n"
+                    "\U0001f4b0 {:,}d | {}\n"
+                    "\U0001f4dd ND CK: <code>{}</code>\n"
+                    "\U0001f550 {}\n"
+                    "<i>Bam nut de duyet hoac tu choi</i>".format(
+                        uname_tp, uid, amt, method, note, req["time"]),
+                    req["id"]
+                )
+            # Tra ve balance HIEN TAI (chua cong - cho duyet)
+            self.sj(200,{"ok":True,"topup":req,"pending":True,
+                         "new_balance":acc_tp.get("balance",0) if acc_tp else 0}); return
 
         if p=="/api/topup/approve":
             tid=b.get("id")
@@ -638,6 +749,8 @@ if __name__=="__main__":
         print("  [DB] Set DATABASE_URL env var for persistent storage")
 
     threading.Thread(target=backup_loop,daemon=True).start()
+    if TELEGRAM_BOT_TOKEN:
+        threading.Thread(target=tg_poll_loop,daemon=True).start()
     server=HTTPServer(("0.0.0.0",PORT),H)
     print("  Local  : http://localhost:{}".format(PORT))
     print("  Network: http://{}:{}".format(local_ip,PORT))
